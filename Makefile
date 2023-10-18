@@ -1,12 +1,8 @@
-DB_URL=postgresql://postgres:Qwerty@12@localhost:5432/book?sslmode=disable
-# DB_URL=postgresql://postgres:Nkq8wqP7XW6taB24S3Gu@vod.cmjqlyloftam.us-west-1.rds.amazonaws.com:5432/vod?sslmode=disable
-# DB_URL=postgresql://postgres:Ktgfc098@my-db-instance.ckzoodctsqnj.ap-south-1.rds.amazonaws.com:5432/vod?sslmode=disable
-
 network:
 	docker network create bank-network
 
 createdb:
-	docker exec -it postgres createdb --username=root --owner=root simple_bank
+	docker exec -it postgres createdb --username=root --owner=root bookselling
 
 dropdb:
 	docker exec -it postgres dropdb simple_bank
@@ -15,16 +11,16 @@ migratecommand:
 	migrate create -ext sql -dir db/migrations -seq  <table_name>
 
 migrateup:
-	migrate -path db/migrations -database "$(DB_URL)" -verbose up
+	migrate -path db/migrations -database "$(DB_URI)" -verbose up
 
 migrateup1:
-	migrate -path db/migrations -database "$(DB_URL)" -verbose up 1
+	migrate -path db/migrations -database "$(DB_URI)" -verbose up 1
 
 migratedown:
-	migrate -path db/migrations -database "$(DB_URL)" -verbose down
+	migrate -path db/migrations -database "$(DB_URI)" -verbose down
 
 migratedown1:
-	migrate -path db/migrations -database "$(DB_URL)" -verbose down 1
+	migrate -path db/migrations -database "$(DB_URI)" -verbose down 1
 
 new_migration:
 	migrate create -ext sql -dir db/migrations -seq $(name)

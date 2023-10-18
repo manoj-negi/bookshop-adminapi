@@ -12,13 +12,13 @@ import (
 // Server serves HTTP requests for our banking service.
 type Server struct {
 	config util.Config
-	store  db.Querier
+	store  db.Store
 	//tokenMaker token.Maker
 	router *mux.Router
 }
 
 // NewServer creates a new HTTP server and set up routing.
-func NewServer(store db.Querier, config util.Config) (*Server, error) {
+func NewServer(store db.Store, config util.Config) (*Server, error) {
 
 	server := &Server{
 		store:  store,
@@ -32,12 +32,12 @@ func NewServer(store db.Querier, config util.Config) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/users", server.createUser)
-	router.HandleFunc("/users/login", server.loginUser)
-	router.HandleFunc("/tokens/renew_access", server.refreshToken)
+	router.HandleFunc("/book/insert", server.handlerInsertBook)
+	//router.HandleFunc("/users/login", server.loginUser)
+	//router.HandleFunc("/tokens/renew_access", server.refreshToken)
 
-	router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
-	router.HandleFunc("/videos", server.listAllVideos).Methods("GET")
+	//router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
+	//router.HandleFunc("/videos", server.listAllVideos).Methods("GET")
 	server.router = router
 }
 
