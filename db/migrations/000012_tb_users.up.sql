@@ -1,7 +1,7 @@
 CREATE TYPE gender_enum AS ENUM ('Male', 'Female');
 
 CREATE TABLE "users" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "first_name" varchar NOT NULL,
   "last_name" varchar NOT NULL,
   "gender" gender_enum NOT NULL CHECK (gender IN ('Male', 'Female')),

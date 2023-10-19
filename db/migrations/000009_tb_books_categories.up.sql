@@ -1,5 +1,5 @@
 CREATE TABLE "books_categories" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "book_id" integer NOT NULL,
   "category_id" integer NOT NULL,
   "is_deleted" boolean DEFAULT 'false',

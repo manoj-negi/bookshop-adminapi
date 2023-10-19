@@ -1,6 +1,6 @@
 
 CREATE TABLE "categories" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
   "is_special" varchar,
   "is_deleted" boolean DEFAULT 'false',

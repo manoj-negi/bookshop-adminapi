@@ -1,5 +1,5 @@
 CREATE TABLE "banners" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
   "image" varchar,
   "start_date" date NOT NULL,

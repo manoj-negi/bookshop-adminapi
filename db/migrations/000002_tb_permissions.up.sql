@@ -1,5 +1,5 @@
 CREATE TABLE "permissions" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar UNIQUE NOT NULL,
   "permission" varchar,
   "is_deleted" boolean DEFAULT 'false',

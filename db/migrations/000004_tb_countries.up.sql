@@ -1,5 +1,5 @@
 CREATE TABLE "countries" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "iso2" varchar NOT NULL,
   "short_name" varchar NOT NULL,
   "long_name" varchar NOT NULL,
