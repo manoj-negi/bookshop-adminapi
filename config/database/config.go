@@ -18,7 +18,7 @@ func NewPostgres(ctx context.Context, connString string) (*Postgres, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create db connection pool: %w", err)
 	}
-
+	fmt.Println("Database connected")
 	return &Postgres{DB: db}, nil
 }
 

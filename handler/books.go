@@ -101,7 +101,6 @@ func (server *Server) handlerInsertBook(w http.ResponseWriter, r *http.Request) 
 			Message:    "Something went wrong",
 			StatusCode: http.StatusBadRequest,
 		}
-		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(jsonResponse)
 		return
 	}
@@ -116,7 +115,7 @@ func (server *Server) handlerInsertBook(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				w.Header().Set("Content-Type", "application/json")
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
