@@ -1,10 +1,15 @@
 package handler
 
 import (
+	"context"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/gorilla/mux"
-
 	db "github.com/vod/db/sqlc"
 	util "github.com/vod/utils"
 )
@@ -15,6 +20,13 @@ type Server struct {
 	store  db.Store
 	//tokenMaker token.Maker
 	router *mux.Router
+}
+
+func SetContentTypeJSON(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // NewServer creates a new HTTP server and set up routing.
@@ -31,14 +43,13 @@ func NewServer(store db.Store, config util.Config) (*Server, error) {
 
 func (server *Server) setupRouter() {
 	router := mux.NewRouter()
-
+	router.Use(SetContentTypeJSON)
 	router.HandleFunc("/book/insert", server.handlerInsertBook)
-	//router.HandleFunc("/users/login", server.loginUser)
-	//router.HandleFunc("/tokens/renew_access", server.refreshToken)
+
 
 	//router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
 	//router.HandleFunc("/videos", server.listAllVideos).Methods("GET")
-	server.router = router 
+	
 	router.HandleFunc("/role", server.handlerCreateRole).Methods("POST")
 	router.HandleFunc("/role/{id}", server.handlerGetRoleById).Methods("GET")
 	router.HandleFunc("/role", server.handlerGetAllRole).Methods("GET")
@@ -70,15 +81,48 @@ func (server *Server) setupRouter() {
 	router.HandleFunc("/author", server.handlerGetAllAuthor).Methods("GET")
 	router.HandleFunc("/author/{id}", server.handlerUpdateAuthor).Methods("PUT")
 	router.HandleFunc("/author/{id}", server.handlerDeleteAuthor).Methods("DELETE")
+  
+	server.router = router 
 }
 
 
 // Start runs the HTTP server on a specific address.
-func (server *Server) Start(address string) error {
-	err := http.ListenAndServe(address, server.router)
-	if err != nil {
-		return err
+func (server *Server) Start(port string) error {
+	var wait time.Duration
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	flag.Parse()
+
+	addr := "0.0.0.0"
+
+	srv := &http.Server{
+		Addr: addr + port,
+		// Good practice to set timeouts to avoid Slowloris attacks.
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      server.router, // Pass our instance of gorilla/mux in.
 	}
+
+	// Run our server in a goroutine so that it doesn't block.
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			slog.Info(err.Error())
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+
+	srv.Shutdown(ctx)
+
+	slog.Info("shutting down")
+	os.Exit(0)
 	return nil
+
 }
 
