@@ -5,12 +5,11 @@ go 1.19
 require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gorilla/mux v1.8.0
+	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.4.3
-	github.com/lib/pq v1.10.9
 )
 
 require (
-	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -23,7 +22,6 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
