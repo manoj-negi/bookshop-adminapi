@@ -1,7 +1,7 @@
 CREATE TYPE status_enum AS ENUM ('Pending', 'In-Process','Completed');
 
 CREATE TABLE "orders" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "book_id" integer NOT NULL,
   "user_id" INT NOT NULL,
   "order_no" varchar,

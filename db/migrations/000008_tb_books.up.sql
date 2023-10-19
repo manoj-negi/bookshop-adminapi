@@ -1,5 +1,5 @@
 CREATE TABLE "books" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "title" varchar NOT NULL,
   "author_id" int NOT NULL,
   "publication_date" date NOT NULL,

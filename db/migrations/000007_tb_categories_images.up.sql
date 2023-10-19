@@ -1,5 +1,5 @@
 CREATE TABLE "categories_images" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "category_id" integer NOT NULL,
   "image" varchar,
   "is_deleted" boolean DEFAULT 'false',

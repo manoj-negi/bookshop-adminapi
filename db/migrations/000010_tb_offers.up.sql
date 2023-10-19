@@ -1,5 +1,5 @@
 CREATE TABLE "offers" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "book_id" integer NOT NULL,
   "discount_percentage" varchar,
   "start_date" date NOT NULL,
