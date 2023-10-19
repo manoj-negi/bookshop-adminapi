@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
