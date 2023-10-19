@@ -9,7 +9,7 @@ INSERT INTO offers (
     $2,
     $3,
     $4
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetOffer :one
 SELECT * FROM offers WHERE id = $1;
@@ -25,8 +25,8 @@ SET
     start_date = $4,
     end_date = $5
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteOffer :one
 DELETE FROM offers WHERE id = $1
-RETURNING id;
+RETURNING *;

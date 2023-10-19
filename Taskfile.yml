@@ -31,7 +31,7 @@ tasks:
   migratedown:
     desc: Rollback database migrations (down)
     cmds:
-      - migrate -path db/migrations -database "$(DB_URL)" -verbose down
+      - migrate -path db/migrations -database "$(DB_URI)" -verbose down
 
   migratedown1:
     desc: Rollback the first database migration (down)

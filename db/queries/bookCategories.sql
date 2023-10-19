@@ -5,7 +5,7 @@ INSERT INTO books_categories (
 ) VALUES (
     $1,
     $2
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetBookCategory :one
 SELECT * FROM books_categories WHERE id = $1;
@@ -19,8 +19,8 @@ SET
     book_id = $2,
     category_id = $3
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteBookCategory :one
 DELETE FROM books_categories WHERE id = $1
-RETURNING id;
+RETURNING *;

@@ -27,7 +27,7 @@ INSERT INTO users (
     $11,
     $12,
     $13
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetUser :one
 SELECT * FROM users WHERE id = $1;
@@ -52,8 +52,8 @@ SET
     password = $13,
     role_id = $14
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteUser :one
 DELETE FROM users WHERE id = $1
-RETURNING id;
+RETURNING *;
