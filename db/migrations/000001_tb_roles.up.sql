@@ -1,5 +1,5 @@
 CREATE TABLE "roles" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar UNIQUE NOT NULL,
   "description" varchar,
   "is_deleted" boolean DEFAULT 'false',

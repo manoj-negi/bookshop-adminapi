@@ -38,8 +38,40 @@ func (server *Server) setupRouter() {
 
 	//router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
 	//router.HandleFunc("/videos", server.listAllVideos).Methods("GET")
-	server.router = router
+	server.router = router 
+	router.HandleFunc("/role", server.handlerCreateRole).Methods("POST")
+	router.HandleFunc("/role/{id}", server.handlerGetRoleById).Methods("GET")
+	router.HandleFunc("/role", server.handlerGetAllRole).Methods("GET")
+	router.HandleFunc("/role/{id}", server.handlerUpdateRole).Methods("PUT")
+	router.HandleFunc("/role/{id}", server.handlerDeleteRole).Methods("DELETE")
+
+
+	router.HandleFunc("/permission", server.handlerCreatePermission).Methods("POST")
+	router.HandleFunc("/permission/{id}", server.handlerGetPermissionById).Methods("GET")
+	router.HandleFunc("/permission", server.handlerGetAllPermission).Methods("GET")
+	router.HandleFunc("/permission/{id}", server.handlerUpdatePermission).Methods("PUT")
+	router.HandleFunc("/permission/{id}", server.handlerDeletePermission).Methods("DELETE")
+
+
+	router.HandleFunc("/rolepermission", server.handlerCreateRolePermission).Methods("POST")
+	router.HandleFunc("/rolepermission/{id}", server.handlerGetRolePermissionById).Methods("GET")
+	router.HandleFunc("/rolepermission", server.handlerGetAllRolePermission).Methods("GET")
+	router.HandleFunc("/rolepermission/{id}", server.handlerUpdateRolePermission).Methods("PUT")
+	router.HandleFunc("/rolepermission/{id}", server.handlerDeleteRolePermission).Methods("DELETE")
+
+	router.HandleFunc("/country", server.handlerCreateCountry).Methods("POST")
+	router.HandleFunc("/country/{id}", server.handlerGetCountryById).Methods("GET")
+	router.HandleFunc("/country", server.handlerGetAllCountry).Methods("GET")
+	router.HandleFunc("/country/{id}", server.handlerUpdateCountry).Methods("PUT")
+	router.HandleFunc("/country/{id}", server.handlerDeleteCountry).Methods("DELETE")
+
+	router.HandleFunc("/author", server.handlerCreateAuthor).Methods("POST")
+	router.HandleFunc("/author/{id}", server.handlerGetAuthorById).Methods("GET")
+	router.HandleFunc("/author", server.handlerGetAllAuthor).Methods("GET")
+	router.HandleFunc("/author/{id}", server.handlerUpdateAuthor).Methods("PUT")
+	router.HandleFunc("/author/{id}", server.handlerDeleteAuthor).Methods("DELETE")
 }
+
 
 // Start runs the HTTP server on a specific address.
 func (server *Server) Start(address string) error {
@@ -49,3 +81,4 @@ func (server *Server) Start(address string) error {
 	}
 	return nil
 }
+

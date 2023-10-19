@@ -1,9 +1,11 @@
 -- name: CreateAuthor :one
 INSERT INTO authors (
-    name
+    name,
+    is_deleted
 ) VALUES (
-    $1
-) RETURNING id;
+    $1,
+    $2
+) RETURNING *;
 
 -- name: GetAuthor :one
 SELECT * FROM authors WHERE id = $1;
@@ -14,10 +16,11 @@ SELECT * FROM authors;
 -- name: UpdateAuthor :one
 UPDATE authors
 SET
-    name = $2
+    name = $2,
+    is_deleted = $3
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteAuthor :one
 DELETE FROM authors WHERE id = $1
-RETURNING id;
+RETURNING *;

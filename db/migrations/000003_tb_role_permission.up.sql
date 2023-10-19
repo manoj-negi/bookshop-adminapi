@@ -1,5 +1,5 @@
 CREATE TABLE "roles_permissions" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "role_id" integer NOT NULL,
   "permission_id" integer NOT NULL,
   "is_deleted" boolean DEFAULT 'false',

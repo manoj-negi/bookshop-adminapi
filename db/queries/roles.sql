@@ -1,11 +1,13 @@
 -- name: CreateRole :one
 INSERT INTO roles (
     name,
-    description
+    description,
+    is_deleted
 ) VALUES (
     $1,
-    $2
-) RETURNING id;
+    $2,
+    $3
+) RETURNING *;
 
 -- name: GetRole :one
 SELECT * FROM roles WHERE id = $1;
@@ -17,10 +19,11 @@ SELECT * FROM roles;
 UPDATE roles
 SET
     name = $2,
-    description = $3
+    description = $3,
+    is_deleted = $4
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteRole :one
 DELETE FROM roles WHERE id = $1
-RETURNING id;
+RETURNING *;

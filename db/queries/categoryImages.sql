@@ -5,7 +5,7 @@ INSERT INTO categories_images (
 ) VALUES (
     $1,
     $2
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetCategoryImage :one
 SELECT * FROM categories_images WHERE id = $1;
@@ -19,8 +19,8 @@ SET
     category_id = $2,
     image = $3
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteCategoryImage :one
 DELETE FROM categories_images WHERE id = $1
-RETURNING id;
+RETURNING *;

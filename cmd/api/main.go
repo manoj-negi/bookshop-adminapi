@@ -9,6 +9,8 @@ import (
 	db "github.com/vod/db/sqlc"
 	"github.com/vod/handler"
 	util "github.com/vod/utils"
+	_ "github.com/lib/pq"
+
 )
 
 func main() {

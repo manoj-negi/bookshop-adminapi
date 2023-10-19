@@ -11,7 +11,7 @@ INSERT INTO banners (
     $3,
     $4,
     $5
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetBanner :one
 SELECT * FROM banners WHERE id = $1;
@@ -28,8 +28,8 @@ SET
     end_date = $5,
     offer_id = $6
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteBanner :one
 DELETE FROM banners WHERE id = $1
-RETURNING id;
+RETURNING *;

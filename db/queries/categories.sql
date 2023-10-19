@@ -5,7 +5,7 @@ INSERT INTO categories (
 ) VALUES (
     $1,
     $2
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetCategory :one
 SELECT * FROM categories WHERE id = $1;
@@ -19,8 +19,8 @@ SET
     name = $2,
     is_special = $3
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteCategory :one
 DELETE FROM categories WHERE id = $1
-RETURNING id;
+RETURNING *;

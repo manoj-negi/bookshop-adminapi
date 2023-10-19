@@ -1,5 +1,5 @@
 CREATE TABLE "authors" (
-  "id" integer PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
   "is_deleted" boolean DEFAULT 'false',
   "created_at" timestamp NOT NULL DEFAULT (now()),

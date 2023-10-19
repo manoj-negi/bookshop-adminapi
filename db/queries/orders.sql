@@ -13,7 +13,7 @@ INSERT INTO orders (
     $4,
     $5,
     $6
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetOrder :one
 SELECT * FROM orders WHERE id = $1;
@@ -31,8 +31,8 @@ SET
     total_price = $6,
     status = $7
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteOrder :one
 DELETE FROM orders WHERE id = $1
-RETURNING id;
+RETURNING *;

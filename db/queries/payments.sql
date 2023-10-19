@@ -7,7 +7,7 @@ INSERT INTO payments (
     $1,
     $2,
     $3
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetPayment :one
 SELECT * FROM payments WHERE id = $1;
@@ -22,8 +22,8 @@ SET
     amount = $3,
     payment_status = $4
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeletePayment :one
 DELETE FROM payments WHERE id = $1
-RETURNING id;
+RETURNING *;

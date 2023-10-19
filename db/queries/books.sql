@@ -11,7 +11,7 @@ INSERT INTO books (
     $3,
     $4,
     $5
-) RETURNING id;
+) RETURNING *;
 
 -- name: GetBook :one
 SELECT * FROM books WHERE id = $1;
@@ -28,8 +28,8 @@ SET
     price = $5,
     stock_quantity = $6
 WHERE id = $1
-RETURNING id;
+RETURNING *;
 
 -- name: DeleteBook :one
 DELETE FROM books WHERE id = $1
-RETURNING id;
+RETURNING *;
