@@ -26,14 +26,35 @@ SELECT * FROM countries;
 -- name: UpdateCountry :one
 UPDATE countries
 SET
-    iso2 = $2,
-    short_name = $3,
-    long_name = $4,
-    numcode = $5,
-    calling_code = $6,
-    cctld = $7,
-    is_deleted = $8
-WHERE id = $1
+    iso2 =CASE
+    WHEN @set_iso2::boolean = TRUE THEN @iso2
+    ELSE iso2
+    END,
+    short_name = CASE
+    WHEN @set_short_name::boolean = TRUE THEN @short_name
+    ELSE short_name
+    END,
+    long_name = CASE
+    WHEN @set_long_name::boolean = TRUE THEN @long_name
+    ELSE long_name
+    END,
+    numcode = CASE
+    WHEN @set_numcode::boolean = TRUE THEN @numcode
+    ELSE numcode
+    END,
+    calling_code = CASE
+    WHEN @set_calling_code::boolean = TRUE THEN @calling_code
+    ELSE calling_code
+    END,
+    cctld = CASE
+    WHEN @set_cctld::boolean = TRUE THEN @cctld
+    ELSE cctld
+    END,
+    is_deleted = CASE
+    WHEN @set_is_deleted::boolean = TRUE THEN @is_deleted
+    ELSE is_deleted
+    END
+WHERE id = @id
 RETURNING *;
 
 -- name: DeleteCountry :one

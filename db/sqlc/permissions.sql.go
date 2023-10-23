@@ -114,26 +114,41 @@ func (q *Queries) GetPermission(ctx context.Context, id int32) (Permission, erro
 const updatePermission = `-- name: UpdatePermission :one
 UPDATE permissions
 SET
-    name = $2,
-    permission = $3,
-    is_deleted = $4
-WHERE id = $1
+    name = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE name
+    END,
+    permission = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE permission
+    END,
+    is_deleted = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, name, permission, is_deleted, created_at, updated_at
 `
 
 type UpdatePermissionParams struct {
-	ID         int32       `json:"id"`
-	Name       string      `json:"name"`
-	Permission pgtype.Text `json:"permission"`
-	IsDeleted  pgtype.Bool `json:"is_deleted"`
+	SetName       bool        `json:"set_name"`
+	Name          string      `json:"name"`
+	SetPermission bool        `json:"set_permission"`
+	Permission    pgtype.Text `json:"permission"`
+	SetIsDeleted  bool        `json:"set_is_deleted"`
+	IsDeleted     pgtype.Bool `json:"is_deleted"`
+	ID            int32       `json:"id"`
 }
 
 func (q *Queries) UpdatePermission(ctx context.Context, arg UpdatePermissionParams) (Permission, error) {
 	row := q.db.QueryRow(ctx, updatePermission,
-		arg.ID,
+		arg.SetName,
 		arg.Name,
+		arg.SetPermission,
 		arg.Permission,
+		arg.SetIsDeleted,
 		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Permission
 	err := row.Scan(

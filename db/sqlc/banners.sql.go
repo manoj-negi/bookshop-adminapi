@@ -17,13 +17,15 @@ INSERT INTO banners (
     image,
     start_date,
     end_date,
-    offer_id
+    offer_id,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
-    $5
+    $5,
+    $6
 ) RETURNING id, name, image, start_date, end_date, offer_id, is_deleted, created_at, updated_at
 `
 
@@ -33,6 +35,7 @@ type CreateBannerParams struct {
 	StartDate pgtype.Date `json:"start_date"`
 	EndDate   pgtype.Date `json:"end_date"`
 	OfferID   int32       `json:"offer_id"`
+	IsDeleted pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateBanner(ctx context.Context, arg CreateBannerParams) (Banner, error) {
@@ -42,6 +45,7 @@ func (q *Queries) CreateBanner(ctx context.Context, arg CreateBannerParams) (Ban
 		arg.StartDate,
 		arg.EndDate,
 		arg.OfferID,
+		arg.IsDeleted,
 	)
 	var i Banner
 	err := row.Scan(
@@ -138,32 +142,65 @@ func (q *Queries) GetBanner(ctx context.Context, id int32) (Banner, error) {
 const updateBanner = `-- name: UpdateBanner :one
 UPDATE banners
 SET
-    name = $2,
-    image = $3,
-    start_date = $4,
-    end_date = $5,
-    offer_id = $6
-WHERE id = $1
+    name = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE name
+    END,
+    image = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE image
+    END,
+    start_date = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE start_date
+    END,
+    end_date = CASE
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE end_date
+    END,
+    offer_id = CASE
+    WHEN $9::boolean = TRUE THEN $10
+    ELSE offer_id
+    END,
+    is_deleted = CASE
+    WHEN $11::boolean = TRUE THEN $12
+    ELSE is_deleted
+    END
+WHERE id = $13
 RETURNING id, name, image, start_date, end_date, offer_id, is_deleted, created_at, updated_at
 `
 
 type UpdateBannerParams struct {
-	ID        int32       `json:"id"`
-	Name      string      `json:"name"`
-	Image     pgtype.Text `json:"image"`
-	StartDate pgtype.Date `json:"start_date"`
-	EndDate   pgtype.Date `json:"end_date"`
-	OfferID   int32       `json:"offer_id"`
+	SetName      bool        `json:"set_name"`
+	Name         string      `json:"name"`
+	SetImage     bool        `json:"set_image"`
+	Image        pgtype.Text `json:"image"`
+	SetStartDate bool        `json:"set_start_date"`
+	StartDate    pgtype.Date `json:"start_date"`
+	SetEndDate   bool        `json:"set_end_date"`
+	EndDate      pgtype.Date `json:"end_date"`
+	SetOfferID   bool        `json:"set_offer_id"`
+	OfferID      int32       `json:"offer_id"`
+	SetIsDeleted bool        `json:"set_is_deleted"`
+	IsDeleted    pgtype.Bool `json:"is_deleted"`
+	ID           int32       `json:"id"`
 }
 
 func (q *Queries) UpdateBanner(ctx context.Context, arg UpdateBannerParams) (Banner, error) {
 	row := q.db.QueryRow(ctx, updateBanner,
-		arg.ID,
+		arg.SetName,
 		arg.Name,
+		arg.SetImage,
 		arg.Image,
+		arg.SetStartDate,
 		arg.StartDate,
+		arg.SetEndDate,
 		arg.EndDate,
+		arg.SetOfferID,
 		arg.OfferID,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Banner
 	err := row.Scan(

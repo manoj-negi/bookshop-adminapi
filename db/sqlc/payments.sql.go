@@ -7,17 +7,21 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payments (
     order_id,
     amount,
-    payment_status
+    payment_status,
+    is_deleted
 ) VALUES (
     $1,
     $2,
-    $3
+    $3,
+    $4
 ) RETURNING id, order_id, amount, payment_status, is_deleted, created_at, updated_at
 `
 
@@ -25,10 +29,16 @@ type CreatePaymentParams struct {
 	OrderID       int32             `json:"order_id"`
 	Amount        int32             `json:"amount"`
 	PaymentStatus PaymentStatusEnum `json:"payment_status"`
+	IsDeleted     pgtype.Bool       `json:"is_deleted"`
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
-	row := q.db.QueryRow(ctx, createPayment, arg.OrderID, arg.Amount, arg.PaymentStatus)
+	row := q.db.QueryRow(ctx, createPayment,
+		arg.OrderID,
+		arg.Amount,
+		arg.PaymentStatus,
+		arg.IsDeleted,
+	)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
@@ -116,26 +126,49 @@ func (q *Queries) GetPayment(ctx context.Context, id int32) (Payment, error) {
 const updatePayment = `-- name: UpdatePayment :one
 UPDATE payments
 SET
-    order_id = $2,
-    amount = $3,
-    payment_status = $4
-WHERE id = $1
+    order_id = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE order_id
+    END,
+    amount = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE amount
+    END,
+    payment_status = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE payment_status
+    END,
+    is_deleted = CASE
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE is_deleted
+    END
+WHERE id = $9
 RETURNING id, order_id, amount, payment_status, is_deleted, created_at, updated_at
 `
 
 type UpdatePaymentParams struct {
-	ID            int32             `json:"id"`
-	OrderID       int32             `json:"order_id"`
-	Amount        int32             `json:"amount"`
-	PaymentStatus PaymentStatusEnum `json:"payment_status"`
+	SetOrderID       bool              `json:"set_order_id"`
+	OrderID          int32             `json:"order_id"`
+	SetAmount        bool              `json:"set_amount"`
+	Amount           int32             `json:"amount"`
+	SetPaymentStatus bool              `json:"set_payment_status"`
+	PaymentStatus    PaymentStatusEnum `json:"payment_status"`
+	SetIsDeleted     bool              `json:"set_is_deleted"`
+	IsDeleted        pgtype.Bool       `json:"is_deleted"`
+	ID               int32             `json:"id"`
 }
 
 func (q *Queries) UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (Payment, error) {
 	row := q.db.QueryRow(ctx, updatePayment,
-		arg.ID,
+		arg.SetOrderID,
 		arg.OrderID,
+		arg.SetAmount,
 		arg.Amount,
+		arg.SetPaymentStatus,
 		arg.PaymentStatus,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Payment
 	err := row.Scan(

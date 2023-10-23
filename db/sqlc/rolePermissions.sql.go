@@ -114,26 +114,41 @@ func (q *Queries) GetRolePermission(ctx context.Context, id int32) (RolesPermiss
 const updateRolePermission = `-- name: UpdateRolePermission :one
 UPDATE roles_permissions
 SET
-    role_id = $2,
-    permission_id = $3,
-    is_deleted = $4
-WHERE id = $1
+    role_id = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE role_id
+    END,
+    permission_id = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE permission_id
+    END,
+    is_deleted = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, role_id, permission_id, is_deleted, created_at, updated_at
 `
 
 type UpdateRolePermissionParams struct {
-	ID           int32       `json:"id"`
-	RoleID       int32       `json:"role_id"`
-	PermissionID int32       `json:"permission_id"`
-	IsDeleted    pgtype.Bool `json:"is_deleted"`
+	SetRoleID       bool        `json:"set_role_id"`
+	RoleID          int32       `json:"role_id"`
+	SetPermissionID bool        `json:"set_permission_id"`
+	PermissionID    int32       `json:"permission_id"`
+	SetIsDeleted    bool        `json:"set_is_deleted"`
+	IsDeleted       pgtype.Bool `json:"is_deleted"`
+	ID              int32       `json:"id"`
 }
 
 func (q *Queries) UpdateRolePermission(ctx context.Context, arg UpdateRolePermissionParams) (RolesPermission, error) {
 	row := q.db.QueryRow(ctx, updateRolePermission,
-		arg.ID,
+		arg.SetRoleID,
 		arg.RoleID,
+		arg.SetPermissionID,
 		arg.PermissionID,
+		arg.SetIsDeleted,
 		arg.IsDeleted,
+		arg.ID,
 	)
 	var i RolesPermission
 	err := row.Scan(

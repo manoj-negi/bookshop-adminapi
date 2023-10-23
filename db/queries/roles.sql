@@ -18,10 +18,19 @@ SELECT * FROM roles;
 -- name: UpdateRole :one
 UPDATE roles
 SET
-    name = $2,
-    description = $3,
-    is_deleted = $4
-WHERE id = $1
+    name = CASE
+    WHEN @set_name::boolean = TRUE THEN @name
+    ELSE name
+    END,
+    description = CASE
+    WHEN @set_description::boolean = TRUE THEN @description
+    ELSE description
+    END,
+    is_deleted = CASE
+    WHEN @set_is_deleted::boolean = TRUE THEN @is_deleted
+    ELSE is_deleted
+    END
+WHERE id = @id
 RETURNING *;
 
 -- name: DeleteRole :one

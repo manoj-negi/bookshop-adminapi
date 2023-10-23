@@ -3,105 +3,47 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-
+	"strconv"
+	"fmt"
 	"github.com/go-playground/validator"
-	// db "github.com/vod/db/sqlc"
-	// util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/gorilla/mux"
+	db "github.com/vod/db/sqlc"
+	util "github.com/vod/utils"
 )
 
-type CreateBookRequest struct {
-	Title         string `json:"title" validate:"required"`
-	AuthorID      int32  `json:"author_id" validate:"required"`
-	Price         int32  `json:"price" validate:"required"`
-	StockQuantity int32  `json:"stock_quantity" validate:"required"`
+type Book struct {
+	ID              int32            `json:"id"`
+	Title           string           `json:"title" validate:"required"`
+	AuthorID        int32            `json:"author_id" validate:"required"`
+	PublicationDate pgtype.Date      `json:"publication_date" validate:"required"`
+	Price           int32            `json:"price" validate:"required"`
+	StockQuantity   int32            `json:"stock_quantity" validate:"required"`
+	IsDeleted       pgtype.Bool      `json:"is_deleted"`
+	CreatedAt       pgtype.Timestamp `json:"created_at"`
+	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
 }
 
-type BookResponse struct {
-	Status     bool        `json:"status"`
-	Message    string      `json:"message"`
-	Data       interface{} `json:"data,omitempty"`
-	StatusCode int         `json:"status_code"`
-}
+var emptyDate pgtype.Date
 
-/* type SuceessResponse struct {
-	Status    bool        `json:"status"`
-	Message   string      `json:"message"`
-	UserToken interface{} `json:"userToken"`
-} */
-
-/*
-	func (server *Server) createUser(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
-			return
-		}
-		ctx := r.Context()
-
-		user := User{}
-		err := json.NewDecoder(r.Body).Decode(&user)
-		if err != nil {
-
-			jsonResponse := JsonResponse{
-				Status:     false,
-				Message:    "invalid JSON request",
-				StatusCode: http.StatusTeapot,
-			}
-			util.WriteJSONResponse(w, http.StatusTeapot, jsonResponse)
-			return
-		}
-
-		hashedPassword, err := util.HashPassword(user.Password)
-		if err != nil {
-
-			jsonResponse := JsonResponse{
-				Status:     false,
-				Message:    "invalid JSON request",
-				StatusCode: http.StatusTeapot,
-			}
-			util.WriteJSONResponse(w, http.StatusTeapot, jsonResponse)
-			return
-		}
-
-		arg := db.CreateUserParams{
-			Username:       user.Username,
-			HashedPassword: hashedPassword,
-			FullName:       user.FullName,
-			Email:          user.Email,
-		}
-
-		userInfo, err := server.store.CreateUser(ctx, arg)
-		if err != nil {
-
-			jsonResponse := JsonResponse{
-				Status:     false,
-				Message:    "invalid JSON request",
-				StatusCode: http.StatusTeapot,
-			}
-			util.WriteJSONResponse(w, http.StatusTeapot, jsonResponse)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(userInfo)
-	}
-*/
-func (server *Server) handlerInsertBook(w http.ResponseWriter, r *http.Request) {
+func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
 		return
 	}
+	ctx := r.Context()
 
-	book := CreateBookRequest{}
+	book := Book{}
 	err := json.NewDecoder(r.Body).Decode(&book)
 
 	if err != nil {
-
 		jsonResponse := JsonResponse{
 			Status:     false,
-			Message:    "Something went wrong",
-			StatusCode: http.StatusBadRequest,
+			Message:    "invalid JSON request",
+			StatusCode: http.StatusNotAcceptable,
 		}
-		json.NewEncoder(w).Encode(jsonResponse)
+		w.Header().Set("Content-Type", "application/json")
+		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
 
@@ -115,7 +57,7 @@ func (server *Server) handlerInsertBook(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-
+				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -123,34 +65,271 @@ func (server *Server) handlerInsertBook(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// dummy JSON response
-	bookInfo := struct {
-		Message string `json:"message"`
-		UserID  int    `json:"user_id"`
-	}{
-		Message: "Book Added",
-		UserID:  123, // Replace with an actual user ID if needed
+	arg := db.CreateBookParams{
+		Title:  book.Title,
+		AuthorID: book.AuthorID,
+		PublicationDate: book.PublicationDate,
+		Price:  book.Price,
+		StockQuantity: book.StockQuantity,
+		IsDeleted: book.IsDeleted,
 	}
 
+	bookInfo, err := server.store.CreateBook(ctx, arg)
+	if err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "invalid JSON request1",
+			StatusCode: http.StatusNotAcceptable,
+		}
+		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookInfo)
+
+	response := struct {
+		Status  bool   `json:"status"`
+		Message string `json:"message"`
+		Data    []db.Book `json:"data"`
+	}{
+		Status:  true,
+		Message: "Book created successfully",
+		Data:    []db.Book{bookInfo},
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
-/* func (server *Server) refreshToken(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
+func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		return
+	}
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
-	// dummy JSON response
-	userInfo := struct {
-		Message string `json:"message"`
-		UserID  int    `json:"user_id"`
-	}{
-		Message: "refresh token",
-		UserID:  123, // Replace with an actual user ID if needed
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
+	bookInfo, err:= server.store.GetBook(ctx, int32(id))
+	if err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to fetch book",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userInfo)
-} */
+
+	response := struct {
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
+		Data    []db.Book `json:"data"`
+	}{
+		Status:  true,
+		Message: "Book retrieved successfully",
+		Data:    []db.Book{bookInfo},
+	}
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to encode response",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
+	}
+}
+
+func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		return
+	}
+	ctx := r.Context()
+
+	bookInfo, err := server.store.GetAllBooks(ctx)
+	if err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to fetch book",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	response := struct {
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
+		Data    []db.Book `json:"data"`
+	}{
+		Status:  true,
+		Message: "Book retrieved successfully",
+		Data:    bookInfo,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to encode response",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
+	}
+}
+
+func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPut {
+        errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+        return
+    }
+
+    ctx := r.Context()
+	
+    vars := mux.Vars(r)
+    idParam, ok := vars["id"]
+    if !ok {
+        errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+        return
+    }
+
+    id, err := strconv.Atoi(idParam)
+    if err != nil {
+        errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+        return
+    }
+
+    book := Book{}
+    err = json.NewDecoder(r.Body).Decode(&book)
+
+    if err != nil {
+        errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+        return
+    }
+
+    arg := db.UpdateBookParams{
+        ID: int32(id),
+    }
+
+    if book.Title != "" {
+        arg.SetTitle = true
+        arg.Title = book.Title
+    }
+
+    if book.AuthorID != 0 {
+        arg.SetAuthorID = true
+        arg.AuthorID = book.AuthorID
+    }
+
+   
+
+	if book.PublicationDate != emptyDate{
+		arg.SetPublicationDate = true
+        arg.PublicationDate = book.PublicationDate
+	} 
+
+    if book.Price != 0 {
+        arg.SetPrice = true
+        arg.Price = book.Price
+    }
+
+    if book.StockQuantity != 0 {
+        arg.SetStockQuantity = true
+        arg.StockQuantity = book.StockQuantity
+    }
+
+    if book.IsDeleted.Valid && book.IsDeleted.Bool {
+        arg.SetIsDeleted = true
+        arg.IsDeleted = book.IsDeleted
+    }
+
+    bookInfo, err := server.store.UpdateBook(ctx, arg)
+    if err != nil {
+        fmt.Println("error-------------", err)
+        errorResponse(w, http.StatusInternalServerError, "Failed to fetch book")
+        return
+    }
+
+    response := struct {
+        Status  bool     `json:"status"`
+        Message string   `json:"message"`
+        Data    []db.Book `json:"data"`
+    }{
+        Status:  true,
+        Message: "Book updated successfully",
+        Data:    []db.Book{bookInfo},
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(response)
+}
+
+func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		errorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
+		return
+	}
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
+
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
+
+	bookInfo, err:= server.store.DeleteBook(ctx, int32(id))
+	if err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to fetch book",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	response := struct {
+		Status  bool   `json:"status"`
+		Message string `json:"message"`
+		Data    []db.Book `json:"data"`
+	}{
+		Status:  true,
+		Message: "book deleted successfully",
+		Data:     []db.Book{bookInfo},
+	}
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		jsonResponse := JsonResponse{
+			Status:     false,
+			Message:    "Failed to encode response",
+			StatusCode: http.StatusInternalServerError,
+		}
+		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
+		return
+	}
+}
+

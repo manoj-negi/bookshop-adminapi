@@ -4,13 +4,15 @@ INSERT INTO banners (
     image,
     start_date,
     end_date,
-    offer_id
+    offer_id,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
-    $5
+    $5,
+    $6
 ) RETURNING *;
 
 -- name: GetBanner :one
@@ -22,12 +24,31 @@ SELECT * FROM banners;
 -- name: UpdateBanner :one
 UPDATE banners
 SET
-    name = $2,
-    image = $3,
-    start_date = $4,
-    end_date = $5,
-    offer_id = $6
-WHERE id = $1
+    name = CASE
+    WHEN @set_name::boolean = TRUE THEN @name
+    ELSE name
+    END,
+    image = CASE
+    WHEN @set_image::boolean = TRUE THEN @image
+    ELSE image
+    END,
+    start_date = CASE
+    WHEN @set_start_date::boolean = TRUE THEN @start_date
+    ELSE start_date
+    END,
+    end_date = CASE
+    WHEN @set_end_date::boolean = TRUE THEN @end_date
+    ELSE end_date
+    END,
+    offer_id = CASE
+    WHEN @set_offer_id::boolean = TRUE THEN @offer_id
+    ELSE offer_id
+    END,
+    is_deleted = CASE
+    WHEN @set_is_deleted::boolean = TRUE THEN @is_deleted
+    ELSE is_deleted
+    END
+WHERE id = @id
 RETURNING *;
 
 -- name: DeleteBanner :one

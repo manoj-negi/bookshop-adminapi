@@ -7,25 +7,30 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBookCategory = `-- name: CreateBookCategory :one
 INSERT INTO books_categories (
     book_id,
-    category_id
+    category_id,
+    is_deleted
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 ) RETURNING id, book_id, category_id, is_deleted, created_at, updated_at
 `
 
 type CreateBookCategoryParams struct {
-	BookID     int32 `json:"book_id"`
-	CategoryID int32 `json:"category_id"`
+	BookID     int32       `json:"book_id"`
+	CategoryID int32       `json:"category_id"`
+	IsDeleted  pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateBookCategory(ctx context.Context, arg CreateBookCategoryParams) (BooksCategory, error) {
-	row := q.db.QueryRow(ctx, createBookCategory, arg.BookID, arg.CategoryID)
+	row := q.db.QueryRow(ctx, createBookCategory, arg.BookID, arg.CategoryID, arg.IsDeleted)
 	var i BooksCategory
 	err := row.Scan(
 		&i.ID,
@@ -109,20 +114,42 @@ func (q *Queries) GetBookCategory(ctx context.Context, id int32) (BooksCategory,
 const updateBookCategory = `-- name: UpdateBookCategory :one
 UPDATE books_categories
 SET
-    book_id = $2,
-    category_id = $3
-WHERE id = $1
+    book_id = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE book_id
+    END,
+    category_id = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE category_id
+    END,
+    is_deleted = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, book_id, category_id, is_deleted, created_at, updated_at
 `
 
 type UpdateBookCategoryParams struct {
-	ID         int32 `json:"id"`
-	BookID     int32 `json:"book_id"`
-	CategoryID int32 `json:"category_id"`
+	SetBookID     bool        `json:"set_book_id"`
+	BookID        int32       `json:"book_id"`
+	SetCategoryID bool        `json:"set_category_id"`
+	CategoryID    int32       `json:"category_id"`
+	SetIsDeleted  bool        `json:"set_is_deleted"`
+	IsDeleted     pgtype.Bool `json:"is_deleted"`
+	ID            int32       `json:"id"`
 }
 
 func (q *Queries) UpdateBookCategory(ctx context.Context, arg UpdateBookCategoryParams) (BooksCategory, error) {
-	row := q.db.QueryRow(ctx, updateBookCategory, arg.ID, arg.BookID, arg.CategoryID)
+	row := q.db.QueryRow(ctx, updateBookCategory,
+		arg.SetBookID,
+		arg.BookID,
+		arg.SetCategoryID,
+		arg.CategoryID,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
+	)
 	var i BooksCategory
 	err := row.Scan(
 		&i.ID,
