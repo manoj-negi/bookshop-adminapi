@@ -23,7 +23,7 @@ type Permission struct {
 
 func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -38,7 +38,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		w.Header().Set("Content-Type", "application/json")
+		
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -53,7 +53,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				w.Header().Set("Content-Type", "application/json")
+				
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -69,7 +69,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 
 	permissionsInfo, err := server.store.CreatePermission(ctx, arg)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, "Failed to create permission")
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to create permission")
 		return
 	}
 
@@ -83,14 +83,14 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 		Data:    []db.Permission{permissionsInfo},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 	w.WriteHeader(http.StatusCreated) 
 	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerGetPermissionById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -98,13 +98,13 @@ func (server *Server) handlerGetPermissionById(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 
@@ -119,7 +119,7 @@ func (server *Server) handlerGetPermissionById(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool            `json:"status"`
@@ -144,7 +144,7 @@ func (server *Server) handlerGetPermissionById(w http.ResponseWriter, r *http.Re
 
 func (server *Server) handlerGetAllPermission(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -160,7 +160,7 @@ func (server *Server) handlerGetAllPermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool            `json:"status"`
@@ -185,7 +185,7 @@ func (server *Server) handlerGetAllPermission(w http.ResponseWriter, r *http.Req
 
 func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPut {
-        errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
         return
     }
 
@@ -194,13 +194,13 @@ func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Req
     vars := mux.Vars(r)
     idParam, ok := vars["id"]
     if !ok {
-        errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
         return
     }
 
     id, err := strconv.Atoi(idParam)
     if err != nil {
-        errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
         return
     }
 
@@ -208,7 +208,7 @@ func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Req
     err = json.NewDecoder(r.Body).Decode(&permission)
 
     if err != nil {
-        errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
         return
     }
 
@@ -233,7 +233,7 @@ func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Req
 
     permissionsInfo, err := server.store.UpdatePermission(ctx, arg)
     if err != nil {
-        errorResponse(w, http.StatusInternalServerError, "Failed to fetch permission")
+        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch permission")
         return
     }
 
@@ -247,14 +247,14 @@ func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Req
         Data:    []db.Permission{permissionsInfo},
     }
 
-    w.Header().Set("Content-Type", "application/json")
+    
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -262,13 +262,13 @@ func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Req
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 
@@ -283,7 +283,7 @@ func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool   `json:"status"`

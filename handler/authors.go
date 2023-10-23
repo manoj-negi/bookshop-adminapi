@@ -28,7 +28,7 @@ type Author struct {
 
 func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -42,7 +42,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		w.Header().Set("Content-Type", "application/json")
+		
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -57,7 +57,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				w.Header().Set("Content-Type", "application/json")
+				
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -80,7 +80,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool   `json:"status"`
@@ -97,20 +97,20 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 
 func (server *Server) handlerGetAuthorById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 	authorInfo, err:= server.store.GetAuthor(ctx, int32(id))
@@ -124,7 +124,7 @@ func (server *Server) handlerGetAuthorById(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -149,7 +149,7 @@ func (server *Server) handlerGetAuthorById(w http.ResponseWriter, r *http.Reques
 
 func (server *Server) handlerGetAllAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -165,7 +165,7 @@ func (server *Server) handlerGetAllAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -190,7 +190,7 @@ func (server *Server) handlerGetAllAuthor(w http.ResponseWriter, r *http.Request
 
 func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
 		return
 	}
 
@@ -199,13 +199,13 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 
@@ -213,7 +213,7 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	err = json.NewDecoder(r.Body).Decode(&author)
 
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
 		return
 	}
 
@@ -233,7 +233,7 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 
 	authorInfo, err := server.store.UpdateAuthor(ctx, arg)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, "Failed to fetch author")
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch author")
 		return
 	}
 
@@ -247,7 +247,7 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 		Data:    []db.Author{authorInfo},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -255,7 +255,7 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 
 func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -263,13 +263,13 @@ func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 
@@ -284,7 +284,7 @@ func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool   `json:"status"`

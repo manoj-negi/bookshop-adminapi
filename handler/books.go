@@ -28,7 +28,7 @@ var emptyDate pgtype.Date
 
 func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -42,7 +42,7 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		w.Header().Set("Content-Type", "application/json")
+		
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -57,7 +57,7 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				w.Header().Set("Content-Type", "application/json")
+				
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -84,7 +84,7 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool   `json:"status"`
@@ -101,20 +101,20 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 
 func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 	bookInfo, err:= server.store.GetBook(ctx, int32(id))
@@ -128,7 +128,7 @@ func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -153,7 +153,7 @@ func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request)
 
 func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -169,7 +169,7 @@ func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -194,7 +194,7 @@ func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) 
 
 func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPut {
-        errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
         return
     }
 
@@ -203,13 +203,13 @@ func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) 
     vars := mux.Vars(r)
     idParam, ok := vars["id"]
     if !ok {
-        errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
         return
     }
 
     id, err := strconv.Atoi(idParam)
     if err != nil {
-        errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
         return
     }
 
@@ -217,7 +217,7 @@ func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) 
     err = json.NewDecoder(r.Body).Decode(&book)
 
     if err != nil {
-        errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
         return
     }
 
@@ -260,7 +260,7 @@ func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) 
     bookInfo, err := server.store.UpdateBook(ctx, arg)
     if err != nil {
         fmt.Println("error-------------", err)
-        errorResponse(w, http.StatusInternalServerError, "Failed to fetch book")
+        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch book")
         return
     }
 
@@ -274,14 +274,14 @@ func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) 
         Data:    []db.Book{bookInfo},
     }
 
-    w.Header().Set("Content-Type", "application/json")
+    
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only DELETE requests are allowed")
 		return
 	}
 	ctx := r.Context()
@@ -289,13 +289,13 @@ func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	idParam, ok := vars["id"]
 	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
 
@@ -310,7 +310,7 @@ func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	
 
 	response := struct {
 		Status  bool   `json:"status"`

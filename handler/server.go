@@ -29,6 +29,7 @@ func SetContentTypeJSON(next http.Handler) http.Handler {
 	})
 }
 
+
 // NewServer creates a new HTTP server and set up routing.
 func NewServer(store db.Store, config util.Config) (*Server, error) {
 
