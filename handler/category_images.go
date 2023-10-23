@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type CategoriesImage struct {
@@ -19,7 +20,6 @@ type CategoriesImage struct {
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
-
 
 func (server *Server) handlerCreateCategoryImage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -37,7 +37,7 @@ func (server *Server) handlerCreateCategoryImage(w http.ResponseWriter, r *http.
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -52,7 +52,7 @@ func (server *Server) handlerCreateCategoryImage(w http.ResponseWriter, r *http.
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -62,8 +62,8 @@ func (server *Server) handlerCreateCategoryImage(w http.ResponseWriter, r *http.
 
 	arg := db.CreateCategoryImageParams{
 		CategoryID: categoryImage.CategoryID,
-		Image:   categoryImage.Image,
-		IsDeleted: categoryImage.IsDeleted,
+		Image:      categoryImage.Image,
+		IsDeleted:  categoryImage.IsDeleted,
 	}
 
 	categoryInfo, err := server.store.CreateCategoryImage(ctx, arg)
@@ -76,11 +76,10 @@ func (server *Server) handlerCreateCategoryImage(w http.ResponseWriter, r *http.
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.CategoriesImage `json:"data"`
 	}{
 		Status:  true,
@@ -109,7 +108,7 @@ func (server *Server) handlerGetCategoryImageById(w http.ResponseWriter, r *http
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	categoryInfo, err:= server.store.GetCategoryImage(ctx, int32(id))
+	categoryInfo, err := server.store.GetCategoryImage(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -120,11 +119,9 @@ func (server *Server) handlerGetCategoryImageById(w http.ResponseWriter, r *http
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.CategoriesImage `json:"data"`
 	}{
 		Status:  true,
@@ -161,11 +158,9 @@ func (server *Server) handlerGetAllCategoryImage(w http.ResponseWriter, r *http.
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.CategoriesImage `json:"data"`
 	}{
 		Status:  true,
@@ -184,7 +179,7 @@ func (server *Server) handlerGetAllCategoryImage(w http.ResponseWriter, r *http.
 	}
 }
 
-func (server *Server) handlerUpdateCategoryImage(w http.ResponseWriter, r *http.Request){
+func (server *Server) handlerUpdateCategoryImage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
 		return
@@ -227,11 +222,10 @@ func (server *Server) handlerUpdateCategoryImage(w http.ResponseWriter, r *http.
 		arg.Image = category.Image
 	}
 
-    if category.IsDeleted.Valid && category.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = category.IsDeleted
-    }
-
+	if category.IsDeleted.Valid && category.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = category.IsDeleted
+	}
 
 	categoryInfo, err := server.store.UpdateCategoryImage(ctx, arg)
 	if err != nil {
@@ -240,8 +234,8 @@ func (server *Server) handlerUpdateCategoryImage(w http.ResponseWriter, r *http.
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.CategoriesImage `json:"data"`
 	}{
 		Status:  true,
@@ -249,7 +243,6 @@ func (server *Server) handlerUpdateCategoryImage(w http.ResponseWriter, r *http.
 		Data:    []db.CategoriesImage{categoryInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -274,7 +267,7 @@ func (server *Server) handlerDeleteCategoryImage(w http.ResponseWriter, r *http.
 		return
 	}
 
-	categoryInfo, err:= server.store.DeleteCategoryImage(ctx, int32(id))
+	categoryInfo, err := server.store.DeleteCategoryImage(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -285,16 +278,14 @@ func (server *Server) handlerDeleteCategoryImage(w http.ResponseWriter, r *http.
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.CategoriesImage `json:"data"`
 	}{
 		Status:  true,
 		Message: "category image deleted successfully",
-		Data:     []db.CategoriesImage{categoryInfo},
+		Data:    []db.CategoriesImage{categoryInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -307,4 +298,3 @@ func (server *Server) handlerDeleteCategoryImage(w http.ResponseWriter, r *http.
 		return
 	}
 }
-

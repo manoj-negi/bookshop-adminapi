@@ -5,10 +5,10 @@ import (
 
 	"log/slog"
 
-	conn "github.com/vod/config/database"
-	db "github.com/vod/db/sqlc"
-	"github.com/vod/handler"
-	util "github.com/vod/utils"
+	conn "github.com/manoj-negi/bookshop-adminapi/config/database"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	"github.com/manoj-negi/bookshop-adminapi/handler"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 func main() {

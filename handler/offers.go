@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Offer struct {
@@ -38,7 +39,7 @@ func (server *Server) handlerCreateOffer(w http.ResponseWriter, r *http.Request)
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -53,7 +54,7 @@ func (server *Server) handlerCreateOffer(w http.ResponseWriter, r *http.Request)
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -62,11 +63,11 @@ func (server *Server) handlerCreateOffer(w http.ResponseWriter, r *http.Request)
 	}
 
 	arg := db.CreateOfferParams{
-		BookID:   offer.BookID,
+		BookID:             offer.BookID,
 		DiscountPercentage: offer.DiscountPercentage,
-		StartDate: offer.StartDate,
-		EndDate:  offer.EndDate,
-		IsDeleted: offer.IsDeleted,
+		StartDate:          offer.StartDate,
+		EndDate:            offer.EndDate,
+		IsDeleted:          offer.IsDeleted,
 	}
 
 	offerInfo, err := server.store.CreateOffer(ctx, arg)
@@ -79,11 +80,10 @@ func (server *Server) handlerCreateOffer(w http.ResponseWriter, r *http.Request)
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Offer `json:"data"`
 	}{
 		Status:  true,
@@ -112,7 +112,7 @@ func (server *Server) handlerGetOfferById(w http.ResponseWriter, r *http.Request
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	offerInfo, err:= server.store.GetOffer(ctx, int32(id))
+	offerInfo, err := server.store.GetOffer(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -123,11 +123,9 @@ func (server *Server) handlerGetOfferById(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Offer `json:"data"`
 	}{
 		Status:  true,
@@ -164,11 +162,9 @@ func (server *Server) handlerGetAllOffer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Offer `json:"data"`
 	}{
 		Status:  true,
@@ -188,82 +184,81 @@ func (server *Server) handlerGetAllOffer(w http.ResponseWriter, r *http.Request)
 }
 
 func (server *Server) handlerUpdateOffer(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    offer := Offer{}
-    err = json.NewDecoder(r.Body).Decode(&offer)
+	offer := Offer{}
+	err = json.NewDecoder(r.Body).Decode(&offer)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdateOfferParams{
-        ID: int32(id),
-    }
+	arg := db.UpdateOfferParams{
+		ID: int32(id),
+	}
 
-    if offer.BookID != 0 {
-        arg.SetBookID = true
-        arg.BookID = offer.BookID
-    }
+	if offer.BookID != 0 {
+		arg.SetBookID = true
+		arg.BookID = offer.BookID
+	}
 
-    if offer.DiscountPercentage != emptyText {
-        arg.SetDiscountPercentage = true
-        arg.DiscountPercentage = offer.DiscountPercentage
-    }
+	if offer.DiscountPercentage != emptyText {
+		arg.SetDiscountPercentage = true
+		arg.DiscountPercentage = offer.DiscountPercentage
+	}
 
-    if offer.StartDate != emptyDate{
-        arg.SetStartDate = true
-        arg.StartDate = offer.StartDate
-    }
+	if offer.StartDate != emptyDate {
+		arg.SetStartDate = true
+		arg.StartDate = offer.StartDate
+	}
 
-    if offer.EndDate != emptyDate {
-        arg.SetEndDate = true
-        arg.EndDate = offer.EndDate
-    }
+	if offer.EndDate != emptyDate {
+		arg.SetEndDate = true
+		arg.EndDate = offer.EndDate
+	}
 
-    if offer.IsDeleted.Valid && offer.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = offer.IsDeleted
-    }
+	if offer.IsDeleted.Valid && offer.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = offer.IsDeleted
+	}
 
-    offerInfo, err := server.store.UpdateOffer(ctx, arg)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch offer")
-        return
-    }
+	offerInfo, err := server.store.UpdateOffer(ctx, arg)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch offer")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.Offer `json:"data"`
-    }{
-        Status:  true,
-        Message: "Offer updated successfully",
-        Data:    []db.Offer{offerInfo},
-    }
+	response := struct {
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
+		Data    []db.Offer `json:"data"`
+	}{
+		Status:  true,
+		Message: "Offer updated successfully",
+		Data:    []db.Offer{offerInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteOffer(w http.ResponseWriter, r *http.Request) {
@@ -286,7 +281,7 @@ func (server *Server) handlerDeleteOffer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	offerInfo, err:= server.store.DeleteOffer(ctx, int32(id))
+	offerInfo, err := server.store.DeleteOffer(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -297,16 +292,14 @@ func (server *Server) handlerDeleteOffer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Offer `json:"data"`
 	}{
 		Status:  true,
 		Message: "offer deleted successfully",
-		Data:     []db.Offer{offerInfo},
+		Data:    []db.Offer{offerInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -319,4 +312,3 @@ func (server *Server) handlerDeleteOffer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 }
-

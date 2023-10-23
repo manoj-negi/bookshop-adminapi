@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Role struct {
@@ -38,7 +39,7 @@ func (server *Server) handlerCreateRole(w http.ResponseWriter, r *http.Request) 
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -53,7 +54,7 @@ func (server *Server) handlerCreateRole(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -62,9 +63,9 @@ func (server *Server) handlerCreateRole(w http.ResponseWriter, r *http.Request) 
 	}
 
 	arg := db.CreateRoleParams{
-		Name:    role.Name,
+		Name:        role.Name,
 		Description: role.Description,
-		IsDeleted: role.IsDeleted,
+		IsDeleted:   role.IsDeleted,
 	}
 
 	roleInfo, err := server.store.CreateRole(ctx, arg)
@@ -77,11 +78,10 @@ func (server *Server) handlerCreateRole(w http.ResponseWriter, r *http.Request) 
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.Role `json:"data"`
 	}{
 		Status:  true,
@@ -110,7 +110,7 @@ func (server *Server) handlerGetRoleById(w http.ResponseWriter, r *http.Request)
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	roleInfo, err:= server.store.GetRole(ctx, int32(id))
+	roleInfo, err := server.store.GetRole(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -120,8 +120,6 @@ func (server *Server) handlerGetRoleById(w http.ResponseWriter, r *http.Request)
 		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
 		return
 	}
-
-	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -162,8 +160,6 @@ func (server *Server) handlerGetAllRole(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
 		Status  bool      `json:"status"`
 		Message string    `json:"message"`
@@ -186,72 +182,71 @@ func (server *Server) handlerGetAllRole(w http.ResponseWriter, r *http.Request) 
 }
 
 func (server *Server) handlerUpdateRole(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    role := Role{}
-    err = json.NewDecoder(r.Body).Decode(&role)
+	role := Role{}
+	err = json.NewDecoder(r.Body).Decode(&role)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdateRoleParams{
-        ID: int32(id),
-    }
+	arg := db.UpdateRoleParams{
+		ID: int32(id),
+	}
 
-    if role.Name != "" {
-        arg.SetName = true
-        arg.Name = role.Name
-    }
+	if role.Name != "" {
+		arg.SetName = true
+		arg.Name = role.Name
+	}
 
-    if role.Description != emptyText {
-        arg.SetDescription = true
-        arg.Description = role.Description
-    }
+	if role.Description != emptyText {
+		arg.SetDescription = true
+		arg.Description = role.Description
+	}
 
 	if role.IsDeleted.Valid && role.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = role.IsDeleted
-    }
+		arg.SetIsDeleted = true
+		arg.IsDeleted = role.IsDeleted
+	}
 
-    roleInfo, err := server.store.UpdateRole(ctx, arg)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch role")
-        return
-    }
+	roleInfo, err := server.store.UpdateRole(ctx, arg)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch role")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.Role `json:"data"`
-    }{
-        Status:  true,
-        Message: "Role updated successfully",
-        Data:     []db.Role{roleInfo},
-    }
+	response := struct {
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
+		Data    []db.Role `json:"data"`
+	}{
+		Status:  true,
+		Message: "Role updated successfully",
+		Data:    []db.Role{roleInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteRole(w http.ResponseWriter, r *http.Request) {
@@ -274,7 +269,7 @@ func (server *Server) handlerDeleteRole(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	roleInfo, err:= server.store.DeleteRole(ctx, int32(id))
+	roleInfo, err := server.store.DeleteRole(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -285,16 +280,14 @@ func (server *Server) handlerDeleteRole(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.Role `json:"data"`
 	}{
 		Status:  true,
 		Message: "role deleted successfully",
-		Data:     []db.Role{roleInfo},
+		Data:    []db.Role{roleInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -307,4 +300,3 @@ func (server *Server) handlerDeleteRole(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
-

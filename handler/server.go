@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 // Server serves HTTP requests for our banking service.
@@ -28,7 +28,6 @@ func SetContentTypeJSON(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
 
 // NewServer creates a new HTTP server and set up routing.
 func NewServer(store db.Store, config util.Config) (*Server, error) {
@@ -47,23 +46,20 @@ func (server *Server) setupRouter() {
 	router.Use(SetContentTypeJSON)
 	// router.HandleFunc("/book/insert", server.handlerInsertBook)
 
-
 	//router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
 	//router.HandleFunc("/videos", server.listAllVideos).Methods("GET")
-	
+
 	router.HandleFunc("/role", server.handlerCreateRole).Methods("POST")
 	router.HandleFunc("/role/{id}", server.handlerGetRoleById).Methods("GET")
 	router.HandleFunc("/role", server.handlerGetAllRole).Methods("GET")
 	router.HandleFunc("/role/{id}", server.handlerUpdateRole).Methods("PUT")
 	router.HandleFunc("/role/{id}", server.handlerDeleteRole).Methods("DELETE")
 
-
 	router.HandleFunc("/permission", server.handlerCreatePermission).Methods("POST")
 	router.HandleFunc("/permission/{id}", server.handlerGetPermissionById).Methods("GET")
 	router.HandleFunc("/permission", server.handlerGetAllPermission).Methods("GET")
 	router.HandleFunc("/permission/{id}", server.handlerUpdatePermission).Methods("PUT")
 	router.HandleFunc("/permission/{id}", server.handlerDeletePermission).Methods("DELETE")
-
 
 	router.HandleFunc("/rolepermission", server.handlerCreateRolePermission).Methods("POST")
 	router.HandleFunc("/rolepermission/{id}", server.handlerGetRolePermissionById).Methods("GET")
@@ -101,7 +97,6 @@ func (server *Server) setupRouter() {
 	router.HandleFunc("/book/{id}", server.handlerUpdateBook).Methods("PUT")
 	router.HandleFunc("/book/{id}", server.handlerDeleteBook).Methods("DELETE")
 
-
 	router.HandleFunc("/bookcategory", server.handlerCreateBookCategory).Methods("POST")
 	router.HandleFunc("/bookcategory/{id}", server.handlerGetBookCategoryById).Methods("GET")
 	router.HandleFunc("/bookcategory", server.handlerGetAllBookCategory).Methods("GET")
@@ -137,10 +132,9 @@ func (server *Server) setupRouter() {
 	router.HandleFunc("/payment", server.handlerGetAllPayment).Methods("GET")
 	router.HandleFunc("/payment/{id}", server.handlerUpdatePayment).Methods("PUT")
 	router.HandleFunc("/payment/{id}", server.handlerDeletePayment).Methods("DELETE")
-  
-	server.router = router 
-}
 
+	server.router = router
+}
 
 // Start runs the HTTP server on a specific address.
 func (server *Server) Start(port string) error {
@@ -181,4 +175,3 @@ func (server *Server) Start(port string) error {
 	return nil
 
 }
-

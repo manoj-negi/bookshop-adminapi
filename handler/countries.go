@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgtype"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Country struct {
@@ -47,7 +48,6 @@ func (server *Server) handlerCreateCountry(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-
 	validate := validator.New()
 	err = validate.Struct(country)
 	if err != nil {
@@ -58,7 +58,7 @@ func (server *Server) handlerCreateCountry(w http.ResponseWriter, r *http.Reques
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -88,11 +88,10 @@ func (server *Server) handlerCreateCountry(w http.ResponseWriter, r *http.Reques
 		util.WriteJSONResponse(w, http.StatusTeapot, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Country `json:"data"`
 	}{
 		Status:  true,
@@ -135,8 +134,6 @@ func (server *Server) handlerGetCountryById(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
-
 	response := struct {
 		Status  bool         `json:"status"`
 		Message string       `json:"message"`
@@ -175,8 +172,6 @@ func (server *Server) handlerGetAllCountry(w http.ResponseWriter, r *http.Reques
 		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
 		return
 	}
-
-	
 
 	response := struct {
 		Status  bool         `json:"status"`
@@ -262,11 +257,10 @@ func (server *Server) handlerUpdateCountry(w http.ResponseWriter, r *http.Reques
 		arg.Cctld = countries.Cctld
 	}
 
-    if countries.IsDeleted.Valid && countries.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = countries.IsDeleted
-    }
-
+	if countries.IsDeleted.Valid && countries.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = countries.IsDeleted
+	}
 
 	countriesInfo, err := server.store.UpdateCountry(ctx, arg)
 	if err != nil {
@@ -275,8 +269,8 @@ func (server *Server) handlerUpdateCountry(w http.ResponseWriter, r *http.Reques
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Country `json:"data"`
 	}{
 		Status:  true,
@@ -284,7 +278,6 @@ func (server *Server) handlerUpdateCountry(w http.ResponseWriter, r *http.Reques
 		Data:    []db.Country{countriesInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -309,7 +302,7 @@ func (server *Server) handlerDeleteCountry(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	countriesInfo, err:= server.store.DeleteCountry(ctx, int32(id))
+	countriesInfo, err := server.store.DeleteCountry(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -320,11 +313,9 @@ func (server *Server) handlerDeleteCountry(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Country `json:"data"`
 	}{
 		Status:  true,

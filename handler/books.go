@@ -2,14 +2,15 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Book struct {
@@ -42,7 +43,7 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -57,7 +58,7 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -66,12 +67,12 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 	}
 
 	arg := db.CreateBookParams{
-		Title:  book.Title,
-		AuthorID: book.AuthorID,
+		Title:           book.Title,
+		AuthorID:        book.AuthorID,
 		PublicationDate: book.PublicationDate,
-		Price:  book.Price,
-		StockQuantity: book.StockQuantity,
-		IsDeleted: book.IsDeleted,
+		Price:           book.Price,
+		StockQuantity:   book.StockQuantity,
+		IsDeleted:       book.IsDeleted,
 	}
 
 	bookInfo, err := server.store.CreateBook(ctx, arg)
@@ -84,11 +85,10 @@ func (server *Server) handlerCreateBook(w http.ResponseWriter, r *http.Request) 
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.Book `json:"data"`
 	}{
 		Status:  true,
@@ -117,7 +117,7 @@ func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request)
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	bookInfo, err:= server.store.GetBook(ctx, int32(id))
+	bookInfo, err := server.store.GetBook(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -127,8 +127,6 @@ func (server *Server) handlerGetBookById(w http.ResponseWriter, r *http.Request)
 		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
 		return
 	}
-
-	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -169,8 +167,6 @@ func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
 		Status  bool      `json:"status"`
 		Message string    `json:"message"`
@@ -193,90 +189,87 @@ func (server *Server) handlerGetAllBook(w http.ResponseWriter, r *http.Request) 
 }
 
 func (server *Server) handlerUpdateBook(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
-	
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	ctx := r.Context()
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    book := Book{}
-    err = json.NewDecoder(r.Body).Decode(&book)
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	book := Book{}
+	err = json.NewDecoder(r.Body).Decode(&book)
 
-    arg := db.UpdateBookParams{
-        ID: int32(id),
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    if book.Title != "" {
-        arg.SetTitle = true
-        arg.Title = book.Title
-    }
+	arg := db.UpdateBookParams{
+		ID: int32(id),
+	}
 
-    if book.AuthorID != 0 {
-        arg.SetAuthorID = true
-        arg.AuthorID = book.AuthorID
-    }
+	if book.Title != "" {
+		arg.SetTitle = true
+		arg.Title = book.Title
+	}
 
-   
+	if book.AuthorID != 0 {
+		arg.SetAuthorID = true
+		arg.AuthorID = book.AuthorID
+	}
 
-	if book.PublicationDate != emptyDate{
+	if book.PublicationDate != emptyDate {
 		arg.SetPublicationDate = true
-        arg.PublicationDate = book.PublicationDate
-	} 
+		arg.PublicationDate = book.PublicationDate
+	}
 
-    if book.Price != 0 {
-        arg.SetPrice = true
-        arg.Price = book.Price
-    }
+	if book.Price != 0 {
+		arg.SetPrice = true
+		arg.Price = book.Price
+	}
 
-    if book.StockQuantity != 0 {
-        arg.SetStockQuantity = true
-        arg.StockQuantity = book.StockQuantity
-    }
+	if book.StockQuantity != 0 {
+		arg.SetStockQuantity = true
+		arg.StockQuantity = book.StockQuantity
+	}
 
-    if book.IsDeleted.Valid && book.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = book.IsDeleted
-    }
+	if book.IsDeleted.Valid && book.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = book.IsDeleted
+	}
 
-    bookInfo, err := server.store.UpdateBook(ctx, arg)
-    if err != nil {
-        fmt.Println("error-------------", err)
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch book")
-        return
-    }
+	bookInfo, err := server.store.UpdateBook(ctx, arg)
+	if err != nil {
+		fmt.Println("error-------------", err)
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch book")
+		return
+	}
 
-    response := struct {
-        Status  bool     `json:"status"`
-        Message string   `json:"message"`
-        Data    []db.Book `json:"data"`
-    }{
-        Status:  true,
-        Message: "Book updated successfully",
-        Data:    []db.Book{bookInfo},
-    }
+	response := struct {
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
+		Data    []db.Book `json:"data"`
+	}{
+		Status:  true,
+		Message: "Book updated successfully",
+		Data:    []db.Book{bookInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) {
@@ -299,7 +292,7 @@ func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	bookInfo, err:= server.store.DeleteBook(ctx, int32(id))
+	bookInfo, err := server.store.DeleteBook(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -310,16 +303,14 @@ func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.Book `json:"data"`
 	}{
 		Status:  true,
 		Message: "book deleted successfully",
-		Data:     []db.Book{bookInfo},
+		Data:    []db.Book{bookInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -332,4 +323,3 @@ func (server *Server) handlerDeleteBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
-

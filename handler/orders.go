@@ -1,18 +1,18 @@
 package handler
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
-	"database/sql/driver"
-	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
-)
 
+	"github.com/go-playground/validator"
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
+)
 
 type StatusEnum string
 
@@ -81,13 +81,13 @@ func (server *Server) handlerCreateOrder(w http.ResponseWriter, r *http.Request)
 	err := json.NewDecoder(r.Body).Decode(&order)
 
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -102,7 +102,7 @@ func (server *Server) handlerCreateOrder(w http.ResponseWriter, r *http.Request)
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -111,18 +111,18 @@ func (server *Server) handlerCreateOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	arg := db.CreateOrderParams{
-		BookID:  order.BookID,
-		UserID:  order.UserID,
-		OrderNo: order.OrderNo,
-		Quantity: order.Quantity,
+		BookID:     order.BookID,
+		UserID:     order.UserID,
+		OrderNo:    order.OrderNo,
+		Quantity:   order.Quantity,
 		TotalPrice: order.TotalPrice,
-		Status:   db.StatusEnum(order.Status),
-		IsDeleted: order.IsDeleted,
+		Status:     db.StatusEnum(order.Status),
+		IsDeleted:  order.IsDeleted,
 	}
 
 	orderInfo, err := server.store.CreateOrder(ctx, arg)
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request1",
@@ -131,11 +131,10 @@ func (server *Server) handlerCreateOrder(w http.ResponseWriter, r *http.Request)
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Order `json:"data"`
 	}{
 		Status:  true,
@@ -164,7 +163,7 @@ func (server *Server) handlerGetOrderById(w http.ResponseWriter, r *http.Request
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	orderInfo, err:= server.store.GetOrder(ctx, int32(id))
+	orderInfo, err := server.store.GetOrder(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -175,11 +174,9 @@ func (server *Server) handlerGetOrderById(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Order `json:"data"`
 	}{
 		Status:  true,
@@ -216,11 +213,9 @@ func (server *Server) handlerGetAllOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Order `json:"data"`
 	}{
 		Status:  true,
@@ -240,93 +235,92 @@ func (server *Server) handlerGetAllOrder(w http.ResponseWriter, r *http.Request)
 }
 
 func (server *Server) handlerUpdateOrder(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    order := Order{}
-    err = json.NewDecoder(r.Body).Decode(&order)
+	order := Order{}
+	err = json.NewDecoder(r.Body).Decode(&order)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdateOrderParams{
-        ID: int32(id),
-    }
+	arg := db.UpdateOrderParams{
+		ID: int32(id),
+	}
 
-    if order.BookID != 0 {
-        arg.SetBookID = true
-        arg.BookID = order.BookID
-    }
+	if order.BookID != 0 {
+		arg.SetBookID = true
+		arg.BookID = order.BookID
+	}
 
-    if order.UserID != 0 {
-        arg.SetUserID = true
-        arg.UserID = order.UserID
-    }
+	if order.UserID != 0 {
+		arg.SetUserID = true
+		arg.UserID = order.UserID
+	}
 
-    if order.OrderNo != emptyText {
-        arg.SetOrderNo = true
-        arg.OrderNo = order.OrderNo
-    }
+	if order.OrderNo != emptyText {
+		arg.SetOrderNo = true
+		arg.OrderNo = order.OrderNo
+	}
 
-    if order.Quantity != 0 {
-        arg.SetQuantity = true
-        arg.Quantity = order.Quantity
-    }
+	if order.Quantity != 0 {
+		arg.SetQuantity = true
+		arg.Quantity = order.Quantity
+	}
 
-    if order.TotalPrice != 0 {
-        arg.SetTotalPrice = true
-        arg.TotalPrice = order.TotalPrice
-    }
+	if order.TotalPrice != 0 {
+		arg.SetTotalPrice = true
+		arg.TotalPrice = order.TotalPrice
+	}
 
-    if order.Status != "" {
-        arg.SetStatus = true
-        arg.Status = db.StatusEnum(order.Status)
-    }
+	if order.Status != "" {
+		arg.SetStatus = true
+		arg.Status = db.StatusEnum(order.Status)
+	}
 
-    if order.IsDeleted.Valid && order.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = order.IsDeleted
-    }
+	if order.IsDeleted.Valid && order.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = order.IsDeleted
+	}
 
-    orderInfo, err := server.store.UpdateOrder(ctx, arg)
-    if err != nil {
-        fmt.Println("------err1------", err)
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch order")
-        return
-    }
+	orderInfo, err := server.store.UpdateOrder(ctx, arg)
+	if err != nil {
+		fmt.Println("------err1------", err)
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch order")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.Order `json:"data"`
-    }{
-        Status:  true,
-        Message: "Order updated successfully",
-        Data:    []db.Order{orderInfo},
-    }
+	response := struct {
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
+		Data    []db.Order `json:"data"`
+	}{
+		Status:  true,
+		Message: "Order updated successfully",
+		Data:    []db.Order{orderInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteOrder(w http.ResponseWriter, r *http.Request) {
@@ -349,7 +343,7 @@ func (server *Server) handlerDeleteOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	orderInfo, err:= server.store.DeleteOrder(ctx, int32(id))
+	orderInfo, err := server.store.DeleteOrder(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -360,16 +354,14 @@ func (server *Server) handlerDeleteOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool       `json:"status"`
+		Message string     `json:"message"`
 		Data    []db.Order `json:"data"`
 	}{
 		Status:  true,
 		Message: "order deleted successfully",
-		Data:     []db.Order{orderInfo},
+		Data:    []db.Order{orderInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -382,4 +374,3 @@ func (server *Server) handlerDeleteOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 }
-

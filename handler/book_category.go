@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type BooksCategory struct {
@@ -19,6 +20,7 @@ type BooksCategory struct {
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
+
 func (server *Server) handlerCreateBookCategory(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
@@ -35,7 +37,7 @@ func (server *Server) handlerCreateBookCategory(w http.ResponseWriter, r *http.R
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -50,7 +52,7 @@ func (server *Server) handlerCreateBookCategory(w http.ResponseWriter, r *http.R
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -59,9 +61,9 @@ func (server *Server) handlerCreateBookCategory(w http.ResponseWriter, r *http.R
 	}
 
 	arg := db.CreateBookCategoryParams{
-		BookID: book.BookID,
+		BookID:     book.BookID,
 		CategoryID: book.CategoryID,
-		IsDeleted: book.IsDeleted,
+		IsDeleted:  book.IsDeleted,
 	}
 
 	bookInfo, err := server.store.CreateBookCategory(ctx, arg)
@@ -74,11 +76,10 @@ func (server *Server) handlerCreateBookCategory(w http.ResponseWriter, r *http.R
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool               `json:"status"`
+		Message string             `json:"message"`
 		Data    []db.BooksCategory `json:"data"`
 	}{
 		Status:  true,
@@ -107,7 +108,7 @@ func (server *Server) handlerGetBookCategoryById(w http.ResponseWriter, r *http.
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	bookInfo, err:= server.store.GetBookCategory(ctx, int32(id))
+	bookInfo, err := server.store.GetBookCategory(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -118,11 +119,9 @@ func (server *Server) handlerGetBookCategoryById(w http.ResponseWriter, r *http.
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool               `json:"status"`
+		Message string             `json:"message"`
 		Data    []db.BooksCategory `json:"data"`
 	}{
 		Status:  true,
@@ -159,11 +158,9 @@ func (server *Server) handlerGetAllBookCategory(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool               `json:"status"`
+		Message string             `json:"message"`
 		Data    []db.BooksCategory `json:"data"`
 	}{
 		Status:  true,
@@ -182,7 +179,7 @@ func (server *Server) handlerGetAllBookCategory(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (server *Server) handlerUpdateBookCategory(w http.ResponseWriter, r *http.Request){
+func (server *Server) handlerUpdateBookCategory(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
 		return
@@ -226,9 +223,9 @@ func (server *Server) handlerUpdateBookCategory(w http.ResponseWriter, r *http.R
 	}
 
 	if book.IsDeleted.Valid && book.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = book.IsDeleted
-    }
+		arg.SetIsDeleted = true
+		arg.IsDeleted = book.IsDeleted
+	}
 
 	bookInfo, err := server.store.UpdateBookCategory(ctx, arg)
 	if err != nil {
@@ -237,8 +234,8 @@ func (server *Server) handlerUpdateBookCategory(w http.ResponseWriter, r *http.R
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool               `json:"status"`
+		Message string             `json:"message"`
 		Data    []db.BooksCategory `json:"data"`
 	}{
 		Status:  true,
@@ -246,7 +243,6 @@ func (server *Server) handlerUpdateBookCategory(w http.ResponseWriter, r *http.R
 		Data:    []db.BooksCategory{bookInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -271,7 +267,7 @@ func (server *Server) handlerDeleteBookCategory(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	bookInfo, err:= server.store.DeleteBookCategory(ctx, int32(id))
+	bookInfo, err := server.store.DeleteBookCategory(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -282,16 +278,14 @@ func (server *Server) handlerDeleteBookCategory(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool               `json:"status"`
+		Message string             `json:"message"`
 		Data    []db.BooksCategory `json:"data"`
 	}{
 		Status:  true,
 		Message: "book category deleted successfully",
-		Data:     []db.BooksCategory{bookInfo},
+		Data:    []db.BooksCategory{bookInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -304,4 +298,3 @@ func (server *Server) handlerDeleteBookCategory(w http.ResponseWriter, r *http.R
 		return
 	}
 }
-

@@ -2,15 +2,17 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
-	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
+
 type RolesPermission struct {
 	ID           int32            `json:"id"`
 	RoleID       int32            `json:"role_id" validate:"required"`
@@ -30,13 +32,13 @@ func (server *Server) handlerCreateRolePermission(w http.ResponseWriter, r *http
 	rolepermission := RolesPermission{}
 	err := json.NewDecoder(r.Body).Decode(&rolepermission)
 	if err != nil {
-		fmt.Println("------------",err)
+		fmt.Println("------------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -50,7 +52,7 @@ func (server *Server) handlerCreateRolePermission(w http.ResponseWriter, r *http
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -59,9 +61,9 @@ func (server *Server) handlerCreateRolePermission(w http.ResponseWriter, r *http
 	}
 
 	arg := db.CreateRolePermissionParams{
-		RoleID:    rolepermission.RoleID,
+		RoleID:       rolepermission.RoleID,
 		PermissionID: rolepermission.PermissionID,
-		IsDeleted: rolepermission.IsDeleted,
+		IsDeleted:    rolepermission.IsDeleted,
 	}
 
 	rolepermissionInfo, err := server.store.CreateRolePermission(ctx, arg)
@@ -71,8 +73,8 @@ func (server *Server) handlerCreateRolePermission(w http.ResponseWriter, r *http
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.RolesPermission `json:"data"`
 	}{
 		Status:  true,
@@ -80,8 +82,7 @@ func (server *Server) handlerCreateRolePermission(w http.ResponseWriter, r *http
 		Data:    []db.RolesPermission{rolepermissionInfo},
 	}
 
-	
-	w.WriteHeader(http.StatusCreated) 
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -116,11 +117,9 @@ func (server *Server) handlerGetRolePermissionById(w http.ResponseWriter, r *htt
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool            `json:"status"`
-		Message string          `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.RolesPermission `json:"data"`
 	}{
 		Status:  true,
@@ -157,11 +156,9 @@ func (server *Server) handlerGetAllRolePermission(w http.ResponseWriter, r *http
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool            `json:"status"`
-		Message string          `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.RolesPermission `json:"data"` // Use []db.BrandsLanguage
 	}{
 		Status:  true,
@@ -181,72 +178,71 @@ func (server *Server) handlerGetAllRolePermission(w http.ResponseWriter, r *http
 }
 
 func (server *Server) handlerUpdateRolePermission(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    permission := RolesPermission{}
-    err = json.NewDecoder(r.Body).Decode(&permission)
+	permission := RolesPermission{}
+	err = json.NewDecoder(r.Body).Decode(&permission)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdateRolePermissionParams{
-        ID: int32(id),
-    }
+	arg := db.UpdateRolePermissionParams{
+		ID: int32(id),
+	}
 
-    if permission.RoleID != 0 {
-        arg.SetRoleID = true
-        arg.RoleID = permission.RoleID
-    }
+	if permission.RoleID != 0 {
+		arg.SetRoleID = true
+		arg.RoleID = permission.RoleID
+	}
 
-    if permission.PermissionID != 0 {
-        arg.SetPermissionID = true
-        arg.PermissionID = permission.PermissionID
-    }
+	if permission.PermissionID != 0 {
+		arg.SetPermissionID = true
+		arg.PermissionID = permission.PermissionID
+	}
 
-    if permission.IsDeleted.Valid && permission.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = permission.IsDeleted
-    }
+	if permission.IsDeleted.Valid && permission.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = permission.IsDeleted
+	}
 
-    rolePermissionsInfo, err := server.store.UpdateRolePermission(ctx, arg)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch role permission")
-        return
-    }
+	rolePermissionsInfo, err := server.store.UpdateRolePermission(ctx, arg)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch role permission")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.RolesPermission `json:"data"`
-    }{
-        Status:  true,
-        Message: "Role permission updated successfully",
-        Data:    []db.RolesPermission{rolePermissionsInfo},
-    }
+	response := struct {
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
+		Data    []db.RolesPermission `json:"data"`
+	}{
+		Status:  true,
+		Message: "Role permission updated successfully",
+		Data:    []db.RolesPermission{rolePermissionsInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteRolePermission(w http.ResponseWriter, r *http.Request) {
@@ -269,7 +265,7 @@ func (server *Server) handlerDeleteRolePermission(w http.ResponseWriter, r *http
 		return
 	}
 
-	rolepermissionsInfo, err:= server.store.DeleteRolePermission(ctx, int32(id))
+	rolepermissionsInfo, err := server.store.DeleteRolePermission(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -280,11 +276,9 @@ func (server *Server) handlerDeleteRolePermission(w http.ResponseWriter, r *http
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool                 `json:"status"`
+		Message string               `json:"message"`
 		Data    []db.RolesPermission `json:"data"`
 	}{
 		Status:  true,
@@ -302,5 +296,3 @@ func (server *Server) handlerDeleteRolePermission(w http.ResponseWriter, r *http
 		return
 	}
 }
-
-

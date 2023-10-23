@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Category struct {
@@ -36,7 +37,7 @@ func (server *Server) handlerCreateCategory(w http.ResponseWriter, r *http.Reque
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -51,7 +52,7 @@ func (server *Server) handlerCreateCategory(w http.ResponseWriter, r *http.Reque
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -60,7 +61,7 @@ func (server *Server) handlerCreateCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	arg := db.CreateCategoryParams{
-		Name:    category.Name,
+		Name:      category.Name,
 		IsSpecial: category.IsSpecial,
 		IsDeleted: category.IsDeleted,
 	}
@@ -75,11 +76,10 @@ func (server *Server) handlerCreateCategory(w http.ResponseWriter, r *http.Reque
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool          `json:"status"`
+		Message string        `json:"message"`
 		Data    []db.Category `json:"data"`
 	}{
 		Status:  true,
@@ -108,7 +108,7 @@ func (server *Server) handlerGetCategoryById(w http.ResponseWriter, r *http.Requ
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	categoryInfo, err:= server.store.GetCategory(ctx, int32(id))
+	categoryInfo, err := server.store.GetCategory(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -119,11 +119,9 @@ func (server *Server) handlerGetCategoryById(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool          `json:"status"`
+		Message string        `json:"message"`
 		Data    []db.Category `json:"data"`
 	}{
 		Status:  true,
@@ -160,11 +158,9 @@ func (server *Server) handlerGetAllCategory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool          `json:"status"`
+		Message string        `json:"message"`
 		Data    []db.Category `json:"data"`
 	}{
 		Status:  true,
@@ -183,7 +179,7 @@ func (server *Server) handlerGetAllCategory(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (server *Server) handlerUpdateCategory(w http.ResponseWriter, r *http.Request){
+func (server *Server) handlerUpdateCategory(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
 		return
@@ -221,15 +217,15 @@ func (server *Server) handlerUpdateCategory(w http.ResponseWriter, r *http.Reque
 		arg.Name = category.Name
 	}
 
-	if category.IsSpecial != emptyText{
+	if category.IsSpecial != emptyText {
 		arg.SetIsSpecial = true
 		arg.IsSpecial = category.IsSpecial
 	}
 
 	if category.IsDeleted.Valid && category.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = category.IsDeleted
-    }
+		arg.SetIsDeleted = true
+		arg.IsDeleted = category.IsDeleted
+	}
 
 	categoryInfo, err := server.store.UpdateCategory(ctx, arg)
 	if err != nil {
@@ -238,8 +234,8 @@ func (server *Server) handlerUpdateCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool          `json:"status"`
+		Message string        `json:"message"`
 		Data    []db.Category `json:"data"`
 	}{
 		Status:  true,
@@ -247,7 +243,6 @@ func (server *Server) handlerUpdateCategory(w http.ResponseWriter, r *http.Reque
 		Data:    []db.Category{categoryInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -272,7 +267,7 @@ func (server *Server) handlerDeleteCategory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	categoryInfo, err:= server.store.DeleteCategory(ctx, int32(id))
+	categoryInfo, err := server.store.DeleteCategory(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -283,16 +278,14 @@ func (server *Server) handlerDeleteCategory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool          `json:"status"`
+		Message string        `json:"message"`
 		Data    []db.Category `json:"data"`
 	}{
 		Status:  true,
 		Message: "category deleted successfully",
-		Data:     []db.Category{categoryInfo},
+		Data:    []db.Category{categoryInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -305,4 +298,3 @@ func (server *Server) handlerDeleteCategory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 }
-

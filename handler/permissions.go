@@ -2,15 +2,17 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
+
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgtype"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
+
 type Permission struct {
 	ID         int32            `json:"id"`
 	Name       string           `json:"name" validate:"required"`
@@ -19,7 +21,6 @@ type Permission struct {
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
-
 
 func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -32,13 +33,13 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 	err := json.NewDecoder(r.Body).Decode(&permission)
 
 	if err != nil {
-		fmt.Println("------------",err)
+		fmt.Println("------------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -53,7 +54,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -64,7 +65,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 	arg := db.CreatePermissionParams{
 		Name:       permission.Name,
 		Permission: permission.Permission,
-		IsDeleted:     permission.IsDeleted,
+		IsDeleted:  permission.IsDeleted,
 	}
 
 	permissionsInfo, err := server.store.CreatePermission(ctx, arg)
@@ -74,8 +75,8 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool            `json:"status"`
+		Message string          `json:"message"`
 		Data    []db.Permission `json:"data"`
 	}{
 		Status:  true,
@@ -83,8 +84,7 @@ func (server *Server) handlerCreatePermission(w http.ResponseWriter, r *http.Req
 		Data:    []db.Permission{permissionsInfo},
 	}
 
-	
-	w.WriteHeader(http.StatusCreated) 
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -118,8 +118,6 @@ func (server *Server) handlerGetPermissionById(w http.ResponseWriter, r *http.Re
 		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
 		return
 	}
-
-	
 
 	response := struct {
 		Status  bool            `json:"status"`
@@ -160,8 +158,6 @@ func (server *Server) handlerGetAllPermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	
-
 	response := struct {
 		Status  bool            `json:"status"`
 		Message string          `json:"message"`
@@ -184,72 +180,71 @@ func (server *Server) handlerGetAllPermission(w http.ResponseWriter, r *http.Req
 }
 
 func (server *Server) handlerUpdatePermission(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    permission := db.Permission{}
-    err = json.NewDecoder(r.Body).Decode(&permission)
+	permission := db.Permission{}
+	err = json.NewDecoder(r.Body).Decode(&permission)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdatePermissionParams{
-        ID: int32(id),
-    }
+	arg := db.UpdatePermissionParams{
+		ID: int32(id),
+	}
 
-    if permission.Name != "" {
-        arg.SetName = true
-        arg.Name = permission.Name
-    }
+	if permission.Name != "" {
+		arg.SetName = true
+		arg.Name = permission.Name
+	}
 
-    if permission.Permission != emptyText {
-        arg.SetPermission = true
-        arg.Permission = permission.Permission
-    }
+	if permission.Permission != emptyText {
+		arg.SetPermission = true
+		arg.Permission = permission.Permission
+	}
 
-    if permission.IsDeleted.Valid && permission.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = permission.IsDeleted
-    }
+	if permission.IsDeleted.Valid && permission.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = permission.IsDeleted
+	}
 
-    permissionsInfo, err := server.store.UpdatePermission(ctx, arg)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch permission")
-        return
-    }
+	permissionsInfo, err := server.store.UpdatePermission(ctx, arg)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch permission")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.Permission `json:"data"`
-    }{
-        Status:  true,
-        Message: "Permission updated successfully",
-        Data:    []db.Permission{permissionsInfo},
-    }
+	response := struct {
+		Status  bool            `json:"status"`
+		Message string          `json:"message"`
+		Data    []db.Permission `json:"data"`
+	}{
+		Status:  true,
+		Message: "Permission updated successfully",
+		Data:    []db.Permission{permissionsInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +267,7 @@ func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	permissionsInfo, err:= server.store.DeletePermission(ctx, int32(id))
+	permissionsInfo, err := server.store.DeletePermission(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -283,11 +278,9 @@ func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool            `json:"status"`
+		Message string          `json:"message"`
 		Data    []db.Permission `json:"data"`
 	}{
 		Status:  true,
@@ -305,5 +298,3 @@ func (server *Server) handlerDeletePermission(w http.ResponseWriter, r *http.Req
 		return
 	}
 }
-
-

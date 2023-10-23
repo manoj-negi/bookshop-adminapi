@@ -1,18 +1,18 @@
 package handler
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
-	"database/sql/driver"
-	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
-)
 
+	"github.com/go-playground/validator"
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
+)
 
 type PaymentStatusEnum string
 
@@ -36,9 +36,8 @@ func (e *PaymentStatusEnum) Scan(src interface{}) error {
 
 type NullPaymentStatusEnum struct {
 	PaymentStatusEnum PaymentStatusEnum `json:"payment_status_enum"`
-	Valid             bool              `json:"valid"` 
+	Valid             bool              `json:"valid"`
 }
-
 
 func (ns *NullPaymentStatusEnum) Scan(value interface{}) error {
 	if value == nil {
@@ -55,7 +54,6 @@ func (ns NullPaymentStatusEnum) Value() (driver.Value, error) {
 	}
 	return string(ns.PaymentStatusEnum), nil
 }
-
 
 type Payment struct {
 	ID            int32             `json:"id"`
@@ -78,13 +76,13 @@ func (server *Server) handlerCreatePayment(w http.ResponseWriter, r *http.Reques
 	err := json.NewDecoder(r.Body).Decode(&payment)
 
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -99,7 +97,7 @@ func (server *Server) handlerCreatePayment(w http.ResponseWriter, r *http.Reques
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -108,15 +106,15 @@ func (server *Server) handlerCreatePayment(w http.ResponseWriter, r *http.Reques
 	}
 
 	arg := db.CreatePaymentParams{
-		OrderID:  payment.OrderID,
-		Amount:   payment.Amount,
+		OrderID:       payment.OrderID,
+		Amount:        payment.Amount,
 		PaymentStatus: db.PaymentStatusEnum(payment.PaymentStatus),
-		IsDeleted: payment.IsDeleted,
+		IsDeleted:     payment.IsDeleted,
 	}
 
 	paymentInfo, err := server.store.CreatePayment(ctx, arg)
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request1",
@@ -125,11 +123,10 @@ func (server *Server) handlerCreatePayment(w http.ResponseWriter, r *http.Reques
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Payment `json:"data"`
 	}{
 		Status:  true,
@@ -158,7 +155,7 @@ func (server *Server) handlerGetPaymentById(w http.ResponseWriter, r *http.Reque
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	paymentInfo, err:= server.store.GetPayment(ctx, int32(id))
+	paymentInfo, err := server.store.GetPayment(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -169,11 +166,9 @@ func (server *Server) handlerGetPaymentById(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Payment `json:"data"`
 	}{
 		Status:  true,
@@ -210,11 +205,9 @@ func (server *Server) handlerGetAllPayment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Payment `json:"data"`
 	}{
 		Status:  true,
@@ -234,78 +227,77 @@ func (server *Server) handlerGetAllPayment(w http.ResponseWriter, r *http.Reques
 }
 
 func (server *Server) handlerUpdatePayment(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    payment := Payment{}
-    err = json.NewDecoder(r.Body).Decode(&payment)
+	payment := Payment{}
+	err = json.NewDecoder(r.Body).Decode(&payment)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdatePaymentParams{
-        ID: int32(id),
-    }
+	arg := db.UpdatePaymentParams{
+		ID: int32(id),
+	}
 
-    if payment.OrderID != 0 {
-        arg.SetOrderID = true
-        arg.OrderID = payment.OrderID
-    }
+	if payment.OrderID != 0 {
+		arg.SetOrderID = true
+		arg.OrderID = payment.OrderID
+	}
 
-    if payment.Amount != 0 {
-        arg.SetAmount = true
-        arg.Amount = payment.Amount
-    }
+	if payment.Amount != 0 {
+		arg.SetAmount = true
+		arg.Amount = payment.Amount
+	}
 
-    if payment.PaymentStatus != "" {
-        arg.SetPaymentStatus = true
-        arg.PaymentStatus = db.PaymentStatusEnum(payment.PaymentStatus)
-    }
+	if payment.PaymentStatus != "" {
+		arg.SetPaymentStatus = true
+		arg.PaymentStatus = db.PaymentStatusEnum(payment.PaymentStatus)
+	}
 
-    if payment.IsDeleted.Valid && payment.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = payment.IsDeleted
-    }
+	if payment.IsDeleted.Valid && payment.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = payment.IsDeleted
+	}
 
-    paymentInfo, err := server.store.UpdatePayment(ctx, arg)
-    if err != nil {
-        fmt.Println("------err1------", err)
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch payment")
-        return
-    }
+	paymentInfo, err := server.store.UpdatePayment(ctx, arg)
+	if err != nil {
+		fmt.Println("------err1------", err)
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch payment")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.Payment `json:"data"`
-    }{
-        Status:  true,
-        Message: "Payment updated successfully",
-        Data:     []db.Payment{paymentInfo},
-    }
+	response := struct {
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
+		Data    []db.Payment `json:"data"`
+	}{
+		Status:  true,
+		Message: "Payment updated successfully",
+		Data:    []db.Payment{paymentInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeletePayment(w http.ResponseWriter, r *http.Request) {
@@ -328,7 +320,7 @@ func (server *Server) handlerDeletePayment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	paymentInfo, err:= server.store.DeletePayment(ctx, int32(id))
+	paymentInfo, err := server.store.DeletePayment(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -339,16 +331,14 @@ func (server *Server) handlerDeletePayment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool         `json:"status"`
+		Message string       `json:"message"`
 		Data    []db.Payment `json:"data"`
 	}{
 		Status:  true,
 		Message: "payment deleted successfully",
-		Data:     []db.Payment{paymentInfo},
+		Data:    []db.Payment{paymentInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -361,4 +351,3 @@ func (server *Server) handlerDeletePayment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 }
-

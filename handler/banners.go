@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type Banner struct {
@@ -22,7 +23,6 @@ type Banner struct {
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
-
 
 func (server *Server) handlerCreateBanner(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -40,7 +40,7 @@ func (server *Server) handlerCreateBanner(w http.ResponseWriter, r *http.Request
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -55,7 +55,7 @@ func (server *Server) handlerCreateBanner(w http.ResponseWriter, r *http.Request
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -64,11 +64,11 @@ func (server *Server) handlerCreateBanner(w http.ResponseWriter, r *http.Request
 	}
 
 	arg := db.CreateBannerParams{
-		Name:    banner.Name,
-		Image:   banner.Image,
-		OfferID: banner.OfferID,
+		Name:      banner.Name,
+		Image:     banner.Image,
+		OfferID:   banner.OfferID,
 		StartDate: banner.StartDate,
-		EndDate:  banner.EndDate,
+		EndDate:   banner.EndDate,
 		IsDeleted: banner.IsDeleted,
 	}
 
@@ -82,11 +82,10 @@ func (server *Server) handlerCreateBanner(w http.ResponseWriter, r *http.Request
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Banner `json:"data"`
 	}{
 		Status:  true,
@@ -115,7 +114,7 @@ func (server *Server) handlerGetBannerById(w http.ResponseWriter, r *http.Reques
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	bannerInfo, err:= server.store.GetBanner(ctx, int32(id))
+	bannerInfo, err := server.store.GetBanner(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -126,11 +125,9 @@ func (server *Server) handlerGetBannerById(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Banner `json:"data"`
 	}{
 		Status:  true,
@@ -167,11 +164,9 @@ func (server *Server) handlerGetAllBanner(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Banner `json:"data"`
 	}{
 		Status:  true,
@@ -223,7 +218,7 @@ func (server *Server) handlerUpdateBanner(w http.ResponseWriter, r *http.Request
 		ID: int32(id),
 	}
 
-	if banner.Name  != "" {
+	if banner.Name != "" {
 		arg.SetName = true
 		arg.Name = banner.Name
 	}
@@ -249,9 +244,9 @@ func (server *Server) handlerUpdateBanner(w http.ResponseWriter, r *http.Request
 	}
 
 	if banner.IsDeleted.Valid && banner.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = banner.IsDeleted
-    }
+		arg.SetIsDeleted = true
+		arg.IsDeleted = banner.IsDeleted
+	}
 
 	bannerInfo, err := server.store.UpdateBanner(ctx, arg)
 	if err != nil {
@@ -260,8 +255,8 @@ func (server *Server) handlerUpdateBanner(w http.ResponseWriter, r *http.Request
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Banner `json:"data"`
 	}{
 		Status:  true,
@@ -269,7 +264,6 @@ func (server *Server) handlerUpdateBanner(w http.ResponseWriter, r *http.Request
 		Data:    []db.Banner{bannerInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -294,7 +288,7 @@ func (server *Server) handlerDeleteBanner(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	bannerInfo, err:= server.store.DeleteBanner(ctx, int32(id))
+	bannerInfo, err := server.store.DeleteBanner(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -305,16 +299,14 @@ func (server *Server) handlerDeleteBanner(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Banner `json:"data"`
 	}{
 		Status:  true,
 		Message: "banner deleted successfully",
-		Data:     []db.Banner{bannerInfo},
+		Data:    []db.Banner{bannerInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -327,4 +319,3 @@ func (server *Server) handlerDeleteBanner(w http.ResponseWriter, r *http.Request
 		return
 	}
 }
-

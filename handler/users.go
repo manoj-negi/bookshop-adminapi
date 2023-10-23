@@ -1,18 +1,18 @@
 package handler
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
-	"database/sql/driver"
-	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
-)
 
+	"github.com/go-playground/validator"
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
+)
 
 type GenderEnum string
 
@@ -76,7 +76,6 @@ type User struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
-
 func (server *Server) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
@@ -88,13 +87,13 @@ func (server *Server) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	err := json.NewDecoder(r.Body).Decode(&user)
 
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -109,7 +108,7 @@ func (server *Server) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -119,24 +118,24 @@ func (server *Server) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	arg := db.CreateUserParams{
 		FirstName: user.FirstName,
-		LastName: user.LastName,
-		Gender: db.GenderEnum(user.Gender),
-		Dob: user.Dob,
-		Address: user.Address,
-		City: user.City,
-		State: user.State,
+		LastName:  user.LastName,
+		Gender:    db.GenderEnum(user.Gender),
+		Dob:       user.Dob,
+		Address:   user.Address,
+		City:      user.City,
+		State:     user.State,
 		CountryID: user.CountryID,
-		MobileNo: user.MobileNo,
-		Username: user.MobileNo,
-		Email: user.Email,
-		Password: user.Password,
-		RoleID: user.RoleID,
+		MobileNo:  user.MobileNo,
+		Username:  user.MobileNo,
+		Email:     user.Email,
+		Password:  user.Password,
+		RoleID:    user.RoleID,
 		IsDeleted: user.IsDeleted,
 	}
 
 	userInfo, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
-		fmt.Println("------err1------",err)
+		fmt.Println("------err1------", err)
 		jsonResponse := JsonResponse{
 			Status:     false,
 			Message:    "invalid JSON request1",
@@ -145,11 +144,10 @@ func (server *Server) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.User `json:"data"`
 	}{
 		Status:  true,
@@ -178,7 +176,7 @@ func (server *Server) handlerGetUserById(w http.ResponseWriter, r *http.Request)
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	userInfo, err:= server.store.GetUser(ctx, int32(id))
+	userInfo, err := server.store.GetUser(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -188,8 +186,6 @@ func (server *Server) handlerGetUserById(w http.ResponseWriter, r *http.Request)
 		util.WriteJSONResponse(w, http.StatusInternalServerError, jsonResponse)
 		return
 	}
-
-	
 
 	response := struct {
 		Status  bool      `json:"status"`
@@ -230,8 +226,6 @@ func (server *Server) handlerGetAllUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
 		Status  bool      `json:"status"`
 		Message string    `json:"message"`
@@ -253,130 +247,128 @@ func (server *Server) handlerGetAllUser(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-
 func (server *Server) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPut {
-        util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-        return
-    }
+	if r.Method != http.MethodPut {
+		util.ErrorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+		return
+	}
 
-    ctx := r.Context()
+	ctx := r.Context()
 
-    vars := mux.Vars(r)
-    idParam, ok := vars["id"]
-    if !ok {
-        util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-        return
-    }
+	vars := mux.Vars(r)
+	idParam, ok := vars["id"]
+	if !ok {
+		util.ErrorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+		return
+	}
 
-    id, err := strconv.Atoi(idParam)
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-        return
-    }
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+		return
+	}
 
-    user := User{}
-    err = json.NewDecoder(r.Body).Decode(&user)
+	user := User{}
+	err = json.NewDecoder(r.Body).Decode(&user)
 
-    if err != nil {
-        util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-        return
-    }
+	if err != nil {
+		util.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+		return
+	}
 
-    arg := db.UpdateUserParams{
-        ID: int32(id),
-    }
+	arg := db.UpdateUserParams{
+		ID: int32(id),
+	}
 
-    if user.FirstName != "" {
-        arg.SetFirstName = true
-        arg.FirstName = user.FirstName
-    }
+	if user.FirstName != "" {
+		arg.SetFirstName = true
+		arg.FirstName = user.FirstName
+	}
 
-    if user.LastName != "" {
-        arg.SetLastName = true
-        arg.LastName = user.LastName
-    }
+	if user.LastName != "" {
+		arg.SetLastName = true
+		arg.LastName = user.LastName
+	}
 
-    if user.Gender != "" {
-        arg.SetGender = true
-        arg.Gender = db.GenderEnum(user.Gender)
-    }
+	if user.Gender != "" {
+		arg.SetGender = true
+		arg.Gender = db.GenderEnum(user.Gender)
+	}
 
-    if user.Dob != emptyDate {
-        arg.SetDob = true
-        arg.Dob = user.Dob
-    }
+	if user.Dob != emptyDate {
+		arg.SetDob = true
+		arg.Dob = user.Dob
+	}
 
-    if user.Address != "" {
-        arg.SetAddress = true
-        arg.Address = user.Address
-    }
+	if user.Address != "" {
+		arg.SetAddress = true
+		arg.Address = user.Address
+	}
 
-    if user.City != "" {
-        arg.SetCity = true
-        arg.City = user.City
-    }
+	if user.City != "" {
+		arg.SetCity = true
+		arg.City = user.City
+	}
 
-    if user.State != "" {
-        arg.SetState = true
-        arg.State = user.State
-    }
+	if user.State != "" {
+		arg.SetState = true
+		arg.State = user.State
+	}
 
-    if user.CountryID != 0 {
-        arg.SetCountryID = true
-        arg.CountryID = user.CountryID
-    }
+	if user.CountryID != 0 {
+		arg.SetCountryID = true
+		arg.CountryID = user.CountryID
+	}
 
-    if user.MobileNo != "" {
-        arg.SetMobileNo = true
-        arg.MobileNo = user.MobileNo
-    }
+	if user.MobileNo != "" {
+		arg.SetMobileNo = true
+		arg.MobileNo = user.MobileNo
+	}
 
-    if user.Username != "" {
-        arg.SetUsername = true
-        arg.Username = user.Username
-    }
+	if user.Username != "" {
+		arg.SetUsername = true
+		arg.Username = user.Username
+	}
 
-    if user.Email != "" {
-        arg.SetEmail = true
-        arg.Email = user.Email
-    }
+	if user.Email != "" {
+		arg.SetEmail = true
+		arg.Email = user.Email
+	}
 
-    if user.Password != "" {
-        arg.SetPassword = true
-        arg.Password = user.Password
-    }
+	if user.Password != "" {
+		arg.SetPassword = true
+		arg.Password = user.Password
+	}
 
-    if user.RoleID != 0 {
-        arg.SetRoleID = true
-        arg.RoleID = user.RoleID
-    }
+	if user.RoleID != 0 {
+		arg.SetRoleID = true
+		arg.RoleID = user.RoleID
+	}
 
-    if user.IsDeleted.Valid && user.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = user.IsDeleted
-    }
+	if user.IsDeleted.Valid && user.IsDeleted.Bool {
+		arg.SetIsDeleted = true
+		arg.IsDeleted = user.IsDeleted
+	}
 
-    userInfo, err := server.store.UpdateUser(ctx, arg)
-    if err != nil {
-        fmt.Println("------err1------", err)
-        util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch user")
-        return
-    }
+	userInfo, err := server.store.UpdateUser(ctx, arg)
+	if err != nil {
+		fmt.Println("------err1------", err)
+		util.ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch user")
+		return
+	}
 
-    response := struct {
-        Status  bool   `json:"status"`
-        Message string `json:"message"`
-        Data    []db.User `json:"data"`
-    }{
-        Status:  true,
-        Message: "User updated successfully",
-        Data:     []db.User{userInfo},
-    }
+	response := struct {
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
+		Data    []db.User `json:"data"`
+	}{
+		Status:  true,
+		Message: "User updated successfully",
+		Data:    []db.User{userInfo},
+	}
 
-    
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -399,7 +391,7 @@ func (server *Server) handlerDeleteUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	userInfo, err:= server.store.DeleteUser(ctx, int32(id))
+	userInfo, err := server.store.DeleteUser(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -410,16 +402,14 @@ func (server *Server) handlerDeleteUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool      `json:"status"`
+		Message string    `json:"message"`
 		Data    []db.User `json:"data"`
 	}{
 		Status:  true,
 		Message: "user deleted successfully",
-		Data:     []db.User{userInfo},
+		Data:    []db.User{userInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -432,4 +422,3 @@ func (server *Server) handlerDeleteUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
-

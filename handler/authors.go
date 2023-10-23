@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/gorilla/mux"
-	db "github.com/vod/db/sqlc"
-	util "github.com/vod/utils"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/manoj-negi/bookshop-adminapi/db/sqlc"
+	util "github.com/manoj-negi/bookshop-adminapi/utils"
 )
 
 type JsonResponse struct {
@@ -42,7 +43,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 			Message:    "invalid JSON request",
 			StatusCode: http.StatusNotAcceptable,
 		}
-		
+
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
@@ -57,7 +58,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 					Message:    "Invalid value for " + err.Field(),
 					StatusCode: http.StatusNotAcceptable,
 				}
-				
+
 				json.NewEncoder(w).Encode(jsonResponse)
 				return
 
@@ -66,7 +67,7 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 	}
 
 	arg := db.CreateAuthorParams{
-		Name:    author.Name,
+		Name:      author.Name,
 		IsDeleted: author.IsDeleted,
 	}
 
@@ -80,11 +81,10 @@ func (server *Server) handlerCreateAuthor(w http.ResponseWriter, r *http.Request
 		util.WriteJSONResponse(w, http.StatusNotAcceptable, jsonResponse)
 		return
 	}
-	
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Author `json:"data"`
 	}{
 		Status:  true,
@@ -113,7 +113,7 @@ func (server *Server) handlerGetAuthorById(w http.ResponseWriter, r *http.Reques
 		util.ErrorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
 		return
 	}
-	authorInfo, err:= server.store.GetAuthor(ctx, int32(id))
+	authorInfo, err := server.store.GetAuthor(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -124,11 +124,9 @@ func (server *Server) handlerGetAuthorById(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Author `json:"data"`
 	}{
 		Status:  true,
@@ -165,11 +163,9 @@ func (server *Server) handlerGetAllAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool      `json:"status"`
-		Message string    `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Author `json:"data"`
 	}{
 		Status:  true,
@@ -227,9 +223,9 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	}
 
 	if author.IsDeleted.Valid && author.IsDeleted.Bool {
-        arg.SetIsDeleted = true
-        arg.IsDeleted = author.IsDeleted
-    }
+		arg.SetIsDeleted = true
+		arg.IsDeleted = author.IsDeleted
+	}
 
 	authorInfo, err := server.store.UpdateAuthor(ctx, arg)
 	if err != nil {
@@ -238,8 +234,8 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	}
 
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Author `json:"data"`
 	}{
 		Status:  true,
@@ -247,11 +243,9 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 		Data:    []db.Author{authorInfo},
 	}
 
-	
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
-
 
 func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -273,7 +267,7 @@ func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	authorInfo, err:= server.store.DeleteAuthor(ctx, int32(id))
+	authorInfo, err := server.store.DeleteAuthor(ctx, int32(id))
 	if err != nil {
 		jsonResponse := JsonResponse{
 			Status:     false,
@@ -284,16 +278,14 @@ func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
-
 	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
+		Status  bool        `json:"status"`
+		Message string      `json:"message"`
 		Data    []db.Author `json:"data"`
 	}{
 		Status:  true,
 		Message: "author deleted successfully",
-		Data:     []db.Author{authorInfo},
+		Data:    []db.Author{authorInfo},
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
@@ -306,4 +298,3 @@ func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request
 		return
 	}
 }
-
