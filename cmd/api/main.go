@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		slog.Info("cannot connect to db", err)
 	}
-	store := db.New(dbConn.DB)
+	store := db.NewStore(dbConn.DB) //db.New(dbConn.DB)
 
 	server, err := handler.NewServer(store, config)
 	if err != nil {

@@ -2,20 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
-	"log/slog"
-	"math/rand"
-	"mime"
 	"net/http"
-	"path/filepath"
-	"time"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/google/uuid"
-	db "github.com/vod/db/sqlc"
 )
 
 type Video struct {
@@ -36,7 +23,6 @@ type ErrorResponse struct {
 }
 
 func errorResponse(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	errResponse := ErrorResponse{
 		Status:  statusCode,
@@ -45,27 +31,14 @@ func errorResponse(w http.ResponseWriter, statusCode int, message string) {
 	json.NewEncoder(w).Encode(errResponse)
 }
 
-func createS3Client(key, secret string) (*session.Session, *s3.S3, error) {
-	awsConfig := aws.Config{
-		Region:      aws.String("us-west-1"),
-		Credentials: credentials.NewStaticCredentials(key, secret, ""),
-	}
+/* ß */
 
-	// Create a new AWS session.
-	sess, err := session.NewSession(&awsConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	svc := s3.New(sess)
-	return sess, svc, nil
-}
-
+/*
 func (server *Server) listAllVideos(w http.ResponseWriter, r *http.Request) {
 	//videos, err := fetchAllVideos()
 
 	ctx := r.Context()
-	videos, err := server.store.ListVideos(ctx, server.config.BUCKET_URL)
+	videos, err := server.store.CreateAuthor()
 
 	if err != nil {
 		errorResponse(w, http.StatusNotFound, "No data")
@@ -88,9 +61,9 @@ func (server *Server) listAllVideos(w http.ResponseWriter, r *http.Request) {
 	// Return the list of video names as a JSON response.
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(videos)
-}
+}*/
 
-func (server *Server) uploadVideoToS3(w http.ResponseWriter, r *http.Request) {
+/*func (server *Server) uploadVideoToS3(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
@@ -161,12 +134,12 @@ func (server *Server) uploadVideoToS3(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 
-}
+}*/
 
-func generateUniqueFilename(originalFilename string) string {
+/* func generateUniqueFilename(originalFilename string) string {
 	timestamp := time.Now().Format("20060102150405") // Format: YYYYMMDDHHMMSS
 	randomUUID := uuid.New().String()
 	randomComponent := rand.Intn(1000000) // Generates a random number between 0 and 999999
 
 	return fmt.Sprintf("%s_%s_%d_%s", timestamp, randomUUID, randomComponent, originalFilename)
-}
+} */
