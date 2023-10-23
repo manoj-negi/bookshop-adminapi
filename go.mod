@@ -1,4 +1,4 @@
-module github.com/vod
+module github.com/manoj-negi/bookshop-adminapi
 
 go 1.19
 
