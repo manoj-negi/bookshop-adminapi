@@ -114,26 +114,41 @@ func (q *Queries) GetRole(ctx context.Context, id int32) (Role, error) {
 const updateRole = `-- name: UpdateRole :one
 UPDATE roles
 SET
-    name = $2,
-    description = $3,
-    is_deleted = $4
-WHERE id = $1
+    name = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE name
+    END,
+    description = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE description
+    END,
+    is_deleted = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, name, description, is_deleted, created_at, updated_at
 `
 
 type UpdateRoleParams struct {
-	ID          int32       `json:"id"`
-	Name        string      `json:"name"`
-	Description pgtype.Text `json:"description"`
-	IsDeleted   pgtype.Bool `json:"is_deleted"`
+	SetName        bool        `json:"set_name"`
+	Name           string      `json:"name"`
+	SetDescription bool        `json:"set_description"`
+	Description    pgtype.Text `json:"description"`
+	SetIsDeleted   bool        `json:"set_is_deleted"`
+	IsDeleted      pgtype.Bool `json:"is_deleted"`
+	ID             int32       `json:"id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) (Role, error) {
 	row := q.db.QueryRow(ctx, updateRole,
-		arg.ID,
+		arg.SetName,
 		arg.Name,
+		arg.SetDescription,
 		arg.Description,
+		arg.SetIsDeleted,
 		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Role
 	err := row.Scan(

@@ -14,20 +14,23 @@ import (
 const createCategory = `-- name: CreateCategory :one
 INSERT INTO categories (
     name,
-    is_special
+    is_special,
+    is_deleted
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 ) RETURNING id, name, is_special, is_deleted, created_at, updated_at
 `
 
 type CreateCategoryParams struct {
 	Name      string      `json:"name"`
 	IsSpecial pgtype.Text `json:"is_special"`
+	IsDeleted pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, createCategory, arg.Name, arg.IsSpecial)
+	row := q.db.QueryRow(ctx, createCategory, arg.Name, arg.IsSpecial, arg.IsDeleted)
 	var i Category
 	err := row.Scan(
 		&i.ID,
@@ -111,20 +114,42 @@ func (q *Queries) GetCategory(ctx context.Context, id int32) (Category, error) {
 const updateCategory = `-- name: UpdateCategory :one
 UPDATE categories
 SET
-    name = $2,
-    is_special = $3
-WHERE id = $1
+    name = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE name
+    END,
+    is_special = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE is_special
+    END,
+    is_deleted = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, name, is_special, is_deleted, created_at, updated_at
 `
 
 type UpdateCategoryParams struct {
-	ID        int32       `json:"id"`
-	Name      string      `json:"name"`
-	IsSpecial pgtype.Text `json:"is_special"`
+	SetName      bool        `json:"set_name"`
+	Name         string      `json:"name"`
+	SetIsSpecial bool        `json:"set_is_special"`
+	IsSpecial    pgtype.Text `json:"is_special"`
+	SetIsDeleted bool        `json:"set_is_deleted"`
+	IsDeleted    pgtype.Bool `json:"is_deleted"`
+	ID           int32       `json:"id"`
 }
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, updateCategory, arg.ID, arg.Name, arg.IsSpecial)
+	row := q.db.QueryRow(ctx, updateCategory,
+		arg.SetName,
+		arg.Name,
+		arg.SetIsSpecial,
+		arg.IsSpecial,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
+	)
 	var i Category
 	err := row.Scan(
 		&i.ID,

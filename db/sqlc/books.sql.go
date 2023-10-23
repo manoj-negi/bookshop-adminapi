@@ -17,13 +17,15 @@ INSERT INTO books (
     author_id,
     publication_date,
     price,
-    stock_quantity
+    stock_quantity,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
-    $5
+    $5,
+    $6
 ) RETURNING id, title, author_id, publication_date, price, stock_quantity, is_deleted, created_at, updated_at
 `
 
@@ -33,6 +35,7 @@ type CreateBookParams struct {
 	PublicationDate pgtype.Date `json:"publication_date"`
 	Price           int32       `json:"price"`
 	StockQuantity   int32       `json:"stock_quantity"`
+	IsDeleted       pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, error) {
@@ -42,6 +45,7 @@ func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, e
 		arg.PublicationDate,
 		arg.Price,
 		arg.StockQuantity,
+		arg.IsDeleted,
 	)
 	var i Book
 	err := row.Scan(
@@ -138,32 +142,65 @@ func (q *Queries) GetBook(ctx context.Context, id int32) (Book, error) {
 const updateBook = `-- name: UpdateBook :one
 UPDATE books
 SET
-    title = $2,
-    author_id = $3,
-    publication_date = $4,
-    price = $5,
-    stock_quantity = $6
-WHERE id = $1
+    title = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE title
+    END,
+    author_id = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE author_id
+    END,
+    publication_date = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE publication_date
+    END,
+    price = CASE
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE price
+    END,
+    stock_quantity = CASE
+    WHEN $9::boolean = TRUE THEN $10
+    ELSE stock_quantity
+    END,
+    is_deleted = CASE
+    WHEN $11::boolean = TRUE THEN $12
+    ELSE is_deleted
+    END
+WHERE id = $13
 RETURNING id, title, author_id, publication_date, price, stock_quantity, is_deleted, created_at, updated_at
 `
 
 type UpdateBookParams struct {
-	ID              int32       `json:"id"`
-	Title           string      `json:"title"`
-	AuthorID        int32       `json:"author_id"`
-	PublicationDate pgtype.Date `json:"publication_date"`
-	Price           int32       `json:"price"`
-	StockQuantity   int32       `json:"stock_quantity"`
+	SetTitle           bool        `json:"set_title"`
+	Title              string      `json:"title"`
+	SetAuthorID        bool        `json:"set_author_id"`
+	AuthorID           int32       `json:"author_id"`
+	SetPublicationDate bool        `json:"set_publication_date"`
+	PublicationDate    pgtype.Date `json:"publication_date"`
+	SetPrice           bool        `json:"set_price"`
+	Price              int32       `json:"price"`
+	SetStockQuantity   bool        `json:"set_stock_quantity"`
+	StockQuantity      int32       `json:"stock_quantity"`
+	SetIsDeleted       bool        `json:"set_is_deleted"`
+	IsDeleted          pgtype.Bool `json:"is_deleted"`
+	ID                 int32       `json:"id"`
 }
 
 func (q *Queries) UpdateBook(ctx context.Context, arg UpdateBookParams) (Book, error) {
 	row := q.db.QueryRow(ctx, updateBook,
-		arg.ID,
+		arg.SetTitle,
 		arg.Title,
+		arg.SetAuthorID,
 		arg.AuthorID,
+		arg.SetPublicationDate,
 		arg.PublicationDate,
+		arg.SetPrice,
 		arg.Price,
+		arg.SetStockQuantity,
 		arg.StockQuantity,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Book
 	err := row.Scan(

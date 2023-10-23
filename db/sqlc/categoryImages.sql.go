@@ -14,20 +14,23 @@ import (
 const createCategoryImage = `-- name: CreateCategoryImage :one
 INSERT INTO categories_images (
     category_id,
-    image
+    image,
+    is_deleted
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 ) RETURNING id, category_id, image, is_deleted, created_at, updated_at
 `
 
 type CreateCategoryImageParams struct {
 	CategoryID int32       `json:"category_id"`
 	Image      pgtype.Text `json:"image"`
+	IsDeleted  pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateCategoryImage(ctx context.Context, arg CreateCategoryImageParams) (CategoriesImage, error) {
-	row := q.db.QueryRow(ctx, createCategoryImage, arg.CategoryID, arg.Image)
+	row := q.db.QueryRow(ctx, createCategoryImage, arg.CategoryID, arg.Image, arg.IsDeleted)
 	var i CategoriesImage
 	err := row.Scan(
 		&i.ID,
@@ -111,20 +114,42 @@ func (q *Queries) GetCategoryImage(ctx context.Context, id int32) (CategoriesIma
 const updateCategoryImage = `-- name: UpdateCategoryImage :one
 UPDATE categories_images
 SET
-    category_id = $2,
-    image = $3
-WHERE id = $1
+    category_id =  CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE category_id
+    END,
+    image =  CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE image
+    END,
+    is_deleted =  CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE is_deleted
+    END
+WHERE id = $7
 RETURNING id, category_id, image, is_deleted, created_at, updated_at
 `
 
 type UpdateCategoryImageParams struct {
-	ID         int32       `json:"id"`
-	CategoryID int32       `json:"category_id"`
-	Image      pgtype.Text `json:"image"`
+	SetCategoryID bool        `json:"set_category_id"`
+	CategoryID    int32       `json:"category_id"`
+	SetImage      bool        `json:"set_image"`
+	Image         pgtype.Text `json:"image"`
+	SetIsDeleted  bool        `json:"set_is_deleted"`
+	IsDeleted     pgtype.Bool `json:"is_deleted"`
+	ID            int32       `json:"id"`
 }
 
 func (q *Queries) UpdateCategoryImage(ctx context.Context, arg UpdateCategoryImageParams) (CategoriesImage, error) {
-	row := q.db.QueryRow(ctx, updateCategoryImage, arg.ID, arg.CategoryID, arg.Image)
+	row := q.db.QueryRow(ctx, updateCategoryImage,
+		arg.SetCategoryID,
+		arg.CategoryID,
+		arg.SetImage,
+		arg.Image,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
+	)
 	var i CategoriesImage
 	err := row.Scan(
 		&i.ID,

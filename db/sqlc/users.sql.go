@@ -25,7 +25,8 @@ INSERT INTO users (
     username,
     email,
     password,
-    role_id
+    role_id,
+    is_deleted
 ) VALUES (
     $1,
     $2,
@@ -39,7 +40,8 @@ INSERT INTO users (
     $10,
     $11,
     $12,
-    $13
+    $13,
+    $14
 ) RETURNING id, first_name, last_name, gender, dob, address, city, state, country_id, mobile_no, username, email, password, role_id, is_deleted, created_at, updated_at
 `
 
@@ -57,6 +59,7 @@ type CreateUserParams struct {
 	Email     string      `json:"email"`
 	Password  string      `json:"password"`
 	RoleID    int32       `json:"role_id"`
+	IsDeleted pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -74,6 +77,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.Password,
 		arg.RoleID,
+		arg.IsDeleted,
 	)
 	var i User
 	err := row.Scan(
@@ -202,56 +206,129 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET
-    first_name = $2,
-    last_name = $3,
-    gender = $4,
-    dob = $5,
-    address = $6,
-    city = $7,
-    state = $8,
-    country_id = $9,
-    mobile_no = $10,
-    username = $11,
-    email = $12,
-    password = $13,
-    role_id = $14
-WHERE id = $1
+    first_name = CASE 
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE first_name
+    END,
+    last_name = CASE 
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE last_name
+    END,
+    gender = CASE 
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE gender
+    END,
+    dob = CASE 
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE dob
+    END,
+    address = CASE 
+    WHEN $9::boolean = TRUE THEN $10
+    ELSE address
+    END,
+    city = CASE 
+    WHEN $11::boolean = TRUE THEN $12
+    ELSE city
+    END,
+    state = CASE 
+    WHEN $13::boolean = TRUE THEN $14
+    ELSE state
+    END,
+    country_id = CASE 
+    WHEN $15::boolean = TRUE THEN $16
+    ELSE country_id
+    END,
+    mobile_no = CASE 
+    WHEN $17::boolean = TRUE THEN $18
+    ELSE mobile_no
+    END,
+    username = CASE 
+    WHEN $19::boolean = TRUE THEN $20
+    ELSE username
+    END,
+    email = CASE 
+    WHEN $21::boolean = TRUE THEN $22
+    ELSE email
+    END,
+    password = CASE 
+    WHEN $23::boolean = TRUE THEN $24
+    ELSE password
+    END,
+    role_id = CASE 
+    WHEN $25::boolean = TRUE THEN $26
+    ELSE role_id
+    END,
+    is_deleted = CASE 
+    WHEN $27::boolean = TRUE THEN $28
+    ELSE is_deleted
+    END
+WHERE id = $29
 RETURNING id, first_name, last_name, gender, dob, address, city, state, country_id, mobile_no, username, email, password, role_id, is_deleted, created_at, updated_at
 `
 
 type UpdateUserParams struct {
-	ID        int32       `json:"id"`
-	FirstName string      `json:"first_name"`
-	LastName  string      `json:"last_name"`
-	Gender    GenderEnum  `json:"gender"`
-	Dob       pgtype.Date `json:"dob"`
-	Address   string      `json:"address"`
-	City      string      `json:"city"`
-	State     string      `json:"state"`
-	CountryID int32       `json:"country_id"`
-	MobileNo  string      `json:"mobile_no"`
-	Username  string      `json:"username"`
-	Email     string      `json:"email"`
-	Password  string      `json:"password"`
-	RoleID    int32       `json:"role_id"`
+	SetFirstName bool        `json:"set_first_name"`
+	FirstName    string      `json:"first_name"`
+	SetLastName  bool        `json:"set_last_name"`
+	LastName     string      `json:"last_name"`
+	SetGender    bool        `json:"set_gender"`
+	Gender       GenderEnum  `json:"gender"`
+	SetDob       bool        `json:"set_dob"`
+	Dob          pgtype.Date `json:"dob"`
+	SetAddress   bool        `json:"set_address"`
+	Address      string      `json:"address"`
+	SetCity      bool        `json:"set_city"`
+	City         string      `json:"city"`
+	SetState     bool        `json:"set_state"`
+	State        string      `json:"state"`
+	SetCountryID bool        `json:"set_country_id"`
+	CountryID    int32       `json:"country_id"`
+	SetMobileNo  bool        `json:"set_mobile_no"`
+	MobileNo     string      `json:"mobile_no"`
+	SetUsername  bool        `json:"set_username"`
+	Username     string      `json:"username"`
+	SetEmail     bool        `json:"set_email"`
+	Email        string      `json:"email"`
+	SetPassword  bool        `json:"set_password"`
+	Password     string      `json:"password"`
+	SetRoleID    bool        `json:"set_role_id"`
+	RoleID       int32       `json:"role_id"`
+	SetIsDeleted bool        `json:"set_is_deleted"`
+	IsDeleted    pgtype.Bool `json:"is_deleted"`
+	ID           int32       `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
-		arg.ID,
+		arg.SetFirstName,
 		arg.FirstName,
+		arg.SetLastName,
 		arg.LastName,
+		arg.SetGender,
 		arg.Gender,
+		arg.SetDob,
 		arg.Dob,
+		arg.SetAddress,
 		arg.Address,
+		arg.SetCity,
 		arg.City,
+		arg.SetState,
 		arg.State,
+		arg.SetCountryID,
 		arg.CountryID,
+		arg.SetMobileNo,
 		arg.MobileNo,
+		arg.SetUsername,
 		arg.Username,
+		arg.SetEmail,
 		arg.Email,
+		arg.SetPassword,
 		arg.Password,
+		arg.SetRoleID,
 		arg.RoleID,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i User
 	err := row.Scan(

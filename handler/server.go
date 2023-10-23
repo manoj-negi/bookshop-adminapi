@@ -44,7 +44,7 @@ func NewServer(store db.Store, config util.Config) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := mux.NewRouter()
 	router.Use(SetContentTypeJSON)
-	router.HandleFunc("/book/insert", server.handlerInsertBook)
+	// router.HandleFunc("/book/insert", server.handlerInsertBook)
 
 
 	//router.HandleFunc("/upload/video", server.uploadVideoToS3).Methods("POST")
@@ -81,6 +81,61 @@ func (server *Server) setupRouter() {
 	router.HandleFunc("/author", server.handlerGetAllAuthor).Methods("GET")
 	router.HandleFunc("/author/{id}", server.handlerUpdateAuthor).Methods("PUT")
 	router.HandleFunc("/author/{id}", server.handlerDeleteAuthor).Methods("DELETE")
+
+	router.HandleFunc("/category", server.handlerCreateCategory).Methods("POST")
+	router.HandleFunc("/category/{id}", server.handlerGetCategoryById).Methods("GET")
+	router.HandleFunc("/category", server.handlerGetAllCategory).Methods("GET")
+	router.HandleFunc("/category/{id}", server.handlerUpdateCategory).Methods("PUT")
+	router.HandleFunc("/category/{id}", server.handlerDeleteCategory).Methods("DELETE")
+
+	router.HandleFunc("/categoryimage", server.handlerCreateCategoryImage).Methods("POST")
+	router.HandleFunc("/categoryimage/{id}", server.handlerGetCategoryImageById).Methods("GET")
+	router.HandleFunc("/categoryimage", server.handlerGetAllCategoryImage).Methods("GET")
+	router.HandleFunc("/categoryimage/{id}", server.handlerUpdateCategoryImage).Methods("PUT")
+	router.HandleFunc("/categoryimage/{id}", server.handlerDeleteCategoryImage).Methods("DELETE")
+
+	router.HandleFunc("/book", server.handlerCreateBook).Methods("POST")
+	router.HandleFunc("/book/{id}", server.handlerGetBookById).Methods("GET")
+	router.HandleFunc("/book", server.handlerGetAllBook).Methods("GET")
+	router.HandleFunc("/book/{id}", server.handlerUpdateBook).Methods("PUT")
+	router.HandleFunc("/book/{id}", server.handlerDeleteBook).Methods("DELETE")
+
+
+	router.HandleFunc("/bookcategory", server.handlerCreateBookCategory).Methods("POST")
+	router.HandleFunc("/bookcategory/{id}", server.handlerGetBookCategoryById).Methods("GET")
+	router.HandleFunc("/bookcategory", server.handlerGetAllBookCategory).Methods("GET")
+	router.HandleFunc("/bookcategory/{id}", server.handlerUpdateBookCategory).Methods("PUT")
+	router.HandleFunc("/bookcategory/{id}", server.handlerDeleteBookCategory).Methods("DELETE")
+
+	router.HandleFunc("/offer", server.handlerCreateOffer).Methods("POST")
+	router.HandleFunc("/offer/{id}", server.handlerGetOfferById).Methods("GET")
+	router.HandleFunc("/offer", server.handlerGetAllOffer).Methods("GET")
+	router.HandleFunc("/offer/{id}", server.handlerUpdateOffer).Methods("PUT")
+	router.HandleFunc("/offer/{id}", server.handlerDeleteOffer).Methods("DELETE")
+
+	router.HandleFunc("/banner", server.handlerCreateBanner).Methods("POST")
+	router.HandleFunc("/banner/{id}", server.handlerGetBannerById).Methods("GET")
+	router.HandleFunc("/banner", server.handlerGetAllBanner).Methods("GET")
+	router.HandleFunc("/banner/{id}", server.handlerUpdateBanner).Methods("PUT")
+	router.HandleFunc("/banner/{id}", server.handlerDeleteBanner).Methods("DELETE")
+
+	router.HandleFunc("/user", server.handlerCreateUser).Methods("POST")
+	router.HandleFunc("/user/{id}", server.handlerGetUserById).Methods("GET")
+	router.HandleFunc("/user", server.handlerGetAllUser).Methods("GET")
+	router.HandleFunc("/user/{id}", server.handlerUpdateUser).Methods("PUT")
+	router.HandleFunc("/user/{id}", server.handlerDeleteUser).Methods("DELETE")
+
+	router.HandleFunc("/order", server.handlerCreateOrder).Methods("POST")
+	router.HandleFunc("/order/{id}", server.handlerGetOrderById).Methods("GET")
+	router.HandleFunc("/order", server.handlerGetAllOrder).Methods("GET")
+	router.HandleFunc("/order/{id}", server.handlerUpdateOrder).Methods("PUT")
+	router.HandleFunc("/order/{id}", server.handlerDeleteOrder).Methods("DELETE")
+
+	router.HandleFunc("/payment", server.handlerCreatePayment).Methods("POST")
+	router.HandleFunc("/payment/{id}", server.handlerGetPaymentById).Methods("GET")
+	router.HandleFunc("/payment", server.handlerGetAllPayment).Methods("GET")
+	router.HandleFunc("/payment/{id}", server.handlerUpdatePayment).Methods("PUT")
+	router.HandleFunc("/payment/{id}", server.handlerDeletePayment).Methods("DELETE")
   
 	server.router = router 
 }

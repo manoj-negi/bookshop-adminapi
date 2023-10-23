@@ -18,14 +18,16 @@ INSERT INTO orders (
     order_no,
     quantity,
     total_price,
-    status
+    status,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
 ) RETURNING id, book_id, user_id, order_no, quantity, total_price, status, is_deleted, created_at, updated_at
 `
 
@@ -36,6 +38,7 @@ type CreateOrderParams struct {
 	Quantity   int32       `json:"quantity"`
 	TotalPrice int32       `json:"total_price"`
 	Status     StatusEnum  `json:"status"`
+	IsDeleted  pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
@@ -46,6 +49,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		arg.Quantity,
 		arg.TotalPrice,
 		arg.Status,
+		arg.IsDeleted,
 	)
 	var i Order
 	err := row.Scan(
@@ -146,35 +150,73 @@ func (q *Queries) GetOrder(ctx context.Context, id int32) (Order, error) {
 const updateOrder = `-- name: UpdateOrder :one
 UPDATE orders
 SET
-    book_id = $2,
-    user_id = $3,
-    order_no = $4,
-    quantity = $5,
-    total_price = $6,
-    status = $7
-WHERE id = $1
+    book_id =  CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE book_id
+    END,
+    user_id =  CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE user_id
+    END,
+    order_no =  CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE order_no
+    END,
+    quantity =  CASE
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE quantity
+    END,
+    total_price =  CASE
+    WHEN $9::boolean = TRUE THEN $10
+    ELSE total_price
+    END,
+    status =  CASE
+    WHEN $11::boolean = TRUE THEN $12
+    ELSE status
+    END,
+    is_deleted =  CASE
+    WHEN $13::boolean = TRUE THEN $14
+    ELSE is_deleted
+    END
+WHERE id = $15
 RETURNING id, book_id, user_id, order_no, quantity, total_price, status, is_deleted, created_at, updated_at
 `
 
 type UpdateOrderParams struct {
-	ID         int32       `json:"id"`
-	BookID     int32       `json:"book_id"`
-	UserID     int32       `json:"user_id"`
-	OrderNo    pgtype.Text `json:"order_no"`
-	Quantity   int32       `json:"quantity"`
-	TotalPrice int32       `json:"total_price"`
-	Status     StatusEnum  `json:"status"`
+	SetBookID     bool        `json:"set_book_id"`
+	BookID        int32       `json:"book_id"`
+	SetUserID     bool        `json:"set_user_id"`
+	UserID        int32       `json:"user_id"`
+	SetOrderNo    bool        `json:"set_order_no"`
+	OrderNo       pgtype.Text `json:"order_no"`
+	SetQuantity   bool        `json:"set_quantity"`
+	Quantity      int32       `json:"quantity"`
+	SetTotalPrice bool        `json:"set_total_price"`
+	TotalPrice    int32       `json:"total_price"`
+	SetStatus     bool        `json:"set_status"`
+	Status        StatusEnum  `json:"status"`
+	SetIsDeleted  bool        `json:"set_is_deleted"`
+	IsDeleted     pgtype.Bool `json:"is_deleted"`
+	ID            int32       `json:"id"`
 }
 
 func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) (Order, error) {
 	row := q.db.QueryRow(ctx, updateOrder,
-		arg.ID,
+		arg.SetBookID,
 		arg.BookID,
+		arg.SetUserID,
 		arg.UserID,
+		arg.SetOrderNo,
 		arg.OrderNo,
+		arg.SetQuantity,
 		arg.Quantity,
+		arg.SetTotalPrice,
 		arg.TotalPrice,
+		arg.SetStatus,
 		arg.Status,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Order
 	err := row.Scan(

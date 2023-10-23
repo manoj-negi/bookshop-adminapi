@@ -107,20 +107,34 @@ func (q *Queries) GetAuthor(ctx context.Context, id int32) (Author, error) {
 const updateAuthor = `-- name: UpdateAuthor :one
 UPDATE authors
 SET
-    name = $2,
-    is_deleted = $3
-WHERE id = $1
+    name = CASE 
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE name
+    END,
+    is_deleted = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE is_deleted
+    END
+WHERE id = $5
 RETURNING id, name, is_deleted, created_at, updated_at
 `
 
 type UpdateAuthorParams struct {
-	ID        int32       `json:"id"`
-	Name      string      `json:"name"`
-	IsDeleted pgtype.Bool `json:"is_deleted"`
+	SetName      bool        `json:"set_name"`
+	Name         string      `json:"name"`
+	SetIsDeleted bool        `json:"set_is_deleted"`
+	IsDeleted    pgtype.Bool `json:"is_deleted"`
+	ID           int32       `json:"id"`
 }
 
 func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) (Author, error) {
-	row := q.db.QueryRow(ctx, updateAuthor, arg.ID, arg.Name, arg.IsDeleted)
+	row := q.db.QueryRow(ctx, updateAuthor,
+		arg.SetName,
+		arg.Name,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
+	)
 	var i Author
 	err := row.Scan(
 		&i.ID,

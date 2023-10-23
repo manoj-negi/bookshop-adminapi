@@ -16,12 +16,14 @@ INSERT INTO offers (
     book_id,
     discount_percentage,
     start_date,
-    end_date
+    end_date,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
-    $4
+    $4,
+    $5
 ) RETURNING id, book_id, discount_percentage, start_date, end_date, is_deleted, created_at, updated_at
 `
 
@@ -30,6 +32,7 @@ type CreateOfferParams struct {
 	DiscountPercentage pgtype.Text `json:"discount_percentage"`
 	StartDate          pgtype.Date `json:"start_date"`
 	EndDate            pgtype.Date `json:"end_date"`
+	IsDeleted          pgtype.Bool `json:"is_deleted"`
 }
 
 func (q *Queries) CreateOffer(ctx context.Context, arg CreateOfferParams) (Offer, error) {
@@ -38,6 +41,7 @@ func (q *Queries) CreateOffer(ctx context.Context, arg CreateOfferParams) (Offer
 		arg.DiscountPercentage,
 		arg.StartDate,
 		arg.EndDate,
+		arg.IsDeleted,
 	)
 	var i Offer
 	err := row.Scan(
@@ -130,29 +134,57 @@ func (q *Queries) GetOffer(ctx context.Context, id int32) (Offer, error) {
 const updateOffer = `-- name: UpdateOffer :one
 UPDATE offers
 SET
-    book_id = $2,
-    discount_percentage = $3,
-    start_date = $4,
-    end_date = $5
-WHERE id = $1
+    book_id = CASE
+    WHEN $1::boolean = TRUE THEN $2
+    ELSE book_id
+    END,
+    discount_percentage = CASE
+    WHEN $3::boolean = TRUE THEN $4
+    ELSE discount_percentage
+    END,
+    start_date = CASE
+    WHEN $5::boolean = TRUE THEN $6
+    ELSE start_date
+    END,
+    end_date = CASE
+    WHEN $7::boolean = TRUE THEN $8
+    ELSE end_date
+    END,
+    is_deleted = CASE
+    WHEN $9::boolean = TRUE THEN $10
+    ELSE is_deleted
+    END
+WHERE id = $11
 RETURNING id, book_id, discount_percentage, start_date, end_date, is_deleted, created_at, updated_at
 `
 
 type UpdateOfferParams struct {
-	ID                 int32       `json:"id"`
-	BookID             int32       `json:"book_id"`
-	DiscountPercentage pgtype.Text `json:"discount_percentage"`
-	StartDate          pgtype.Date `json:"start_date"`
-	EndDate            pgtype.Date `json:"end_date"`
+	SetBookID             bool        `json:"set_book_id"`
+	BookID                int32       `json:"book_id"`
+	SetDiscountPercentage bool        `json:"set_discount_percentage"`
+	DiscountPercentage    pgtype.Text `json:"discount_percentage"`
+	SetStartDate          bool        `json:"set_start_date"`
+	StartDate             pgtype.Date `json:"start_date"`
+	SetEndDate            bool        `json:"set_end_date"`
+	EndDate               pgtype.Date `json:"end_date"`
+	SetIsDeleted          bool        `json:"set_is_deleted"`
+	IsDeleted             pgtype.Bool `json:"is_deleted"`
+	ID                    int32       `json:"id"`
 }
 
 func (q *Queries) UpdateOffer(ctx context.Context, arg UpdateOfferParams) (Offer, error) {
 	row := q.db.QueryRow(ctx, updateOffer,
-		arg.ID,
+		arg.SetBookID,
 		arg.BookID,
+		arg.SetDiscountPercentage,
 		arg.DiscountPercentage,
+		arg.SetStartDate,
 		arg.StartDate,
+		arg.SetEndDate,
 		arg.EndDate,
+		arg.SetIsDeleted,
+		arg.IsDeleted,
+		arg.ID,
 	)
 	var i Offer
 	err := row.Scan(

@@ -11,6 +11,13 @@ import (
 	util "github.com/vod/utils"
 )
 
+type JsonResponse struct {
+	Status     bool        `json:"status"`
+	Message    string      `json:"message"`
+	Data       interface{} `json:"data,omitempty"`
+	StatusCode int         `json:"status_code"`
+}
+
 type Author struct {
 	ID        int32            `json:"id"`
 	Name      string           `json:"name" validate:"required"`
@@ -181,8 +188,7 @@ func (server *Server) handlerGetAllAuthor(w http.ResponseWriter, r *http.Request
 	}
 }
 
-
-func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request){
+func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
 		return
@@ -212,12 +218,20 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	}
 
 	arg := db.UpdateAuthorParams{
-		ID:       	 int32(id),
-		Name:    author.Name,
-		IsDeleted: author.IsDeleted,
+		ID: int32(id),
 	}
 
-	authorInfo,err:= server.store.UpdateAuthor(ctx, arg)
+	if author.Name != "" {
+		arg.SetName = true
+		arg.Name = author.Name
+	}
+
+	if author.IsDeleted.Valid && author.IsDeleted.Bool {
+        arg.SetIsDeleted = true
+        arg.IsDeleted = author.IsDeleted
+    }
+
+	authorInfo, err := server.store.UpdateAuthor(ctx, arg)
 	if err != nil {
 		errorResponse(w, http.StatusInternalServerError, "Failed to fetch author")
 		return
@@ -230,13 +244,14 @@ func (server *Server) handlerUpdateAuthor(w http.ResponseWriter, r *http.Request
 	}{
 		Status:  true,
 		Message: "author updated successfully",
-		Data:     []db.Author{authorInfo},
+		Data:    []db.Author{authorInfo},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
+
 
 func (server *Server) handlerDeleteAuthor(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

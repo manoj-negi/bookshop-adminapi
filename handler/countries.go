@@ -229,21 +229,51 @@ func (server *Server) handlerUpdateCountry(w http.ResponseWriter, r *http.Reques
 	}
 
 	arg := db.UpdateCountryParams{
-		ID:        int32(id),
-		Iso2: countries.Iso2,
-		ShortName: countries.ShortName,
-		LongName: countries.LongName,
-		Numcode: countries.Numcode,
-		CallingCode: countries.CallingCode,
-		Cctld: countries.Cctld,
-		IsDeleted: countries.IsDeleted,
+		ID: int32(id),
 	}
+
+	if countries.Iso2 != "" {
+		arg.SetIso2 = true
+		arg.Iso2 = countries.Iso2
+	}
+
+	if countries.ShortName != "" {
+		arg.SetShortName = true
+		arg.ShortName = countries.ShortName
+	}
+
+	if countries.LongName != "" {
+		arg.SetLongName = true
+		arg.LongName = countries.LongName
+	}
+
+	if countries.Numcode != emptyText {
+		arg.SetNumcode = true
+		arg.Numcode = countries.Numcode
+	}
+
+	if countries.CallingCode != "" {
+		arg.SetCallingCode = true
+		arg.CallingCode = countries.CallingCode
+	}
+
+	if countries.Cctld != "" {
+		arg.SetCctld = true
+		arg.Cctld = countries.Cctld
+	}
+
+    if countries.IsDeleted.Valid && countries.IsDeleted.Bool {
+        arg.SetIsDeleted = true
+        arg.IsDeleted = countries.IsDeleted
+    }
+
 
 	countriesInfo, err := server.store.UpdateCountry(ctx, arg)
 	if err != nil {
 		errorResponse(w, http.StatusInternalServerError, "Failed to fetch Country")
 		return
 	}
+
 	response := struct {
 		Status  bool   `json:"status"`
 		Message string `json:"message"`

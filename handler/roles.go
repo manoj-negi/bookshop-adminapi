@@ -20,6 +20,8 @@ type Role struct {
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }
 
+var emptyText pgtype.Text
+
 func (server *Server) handlerCreateRole(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorResponse(w, http.StatusMethodNotAllowed, "Only POST requests are allowed")
@@ -183,62 +185,73 @@ func (server *Server) handlerGetAllRole(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func (server *Server) handlerUpdateRole(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPut {
+        errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
+        return
+    }
 
-func (server *Server) handlerUpdateRole(w http.ResponseWriter, r *http.Request){
-	if r.Method != http.MethodPut {
-		errorResponse(w, http.StatusMethodNotAllowed, "Only PUT requests are allowed")
-		return
-	}
+    ctx := r.Context()
 
-	ctx := r.Context()
+    vars := mux.Vars(r)
+    idParam, ok := vars["id"]
+    if !ok {
+        errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
+        return
+    }
 
-	vars := mux.Vars(r)
-	idParam, ok := vars["id"]
-	if !ok {
-		errorResponse(w, http.StatusBadRequest, "Missing 'id' URL parameter")
-		return
-	}
+    id, err := strconv.Atoi(idParam)
+    if err != nil {
+        errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
+        return
+    }
 
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid 'id' URL parameter")
-		return
-	}
+    role := Role{}
+    err = json.NewDecoder(r.Body).Decode(&role)
 
-	role := db.Role{}
-	err = json.NewDecoder(r.Body).Decode(&role)
+    if err != nil {
+        errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
+        return
+    }
 
-	if err != nil {
-		errorResponse(w, http.StatusBadRequest, "Invalid JSON request")
-		return
-	}
+    arg := db.UpdateRoleParams{
+        ID: int32(id),
+    }
 
-	arg := db.UpdateRoleParams{
-		ID:       	 int32(id),
-		Name:    role.Name,
-		Description: role.Description,
-		IsDeleted: role.IsDeleted,
-	}
+    if role.Name != "" {
+        arg.SetName = true
+        arg.Name = role.Name
+    }
 
-	roleInfo,err:= server.store.UpdateRole(ctx, arg)
-	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, "Failed to fetch role")
-		return
-	}
+    if role.Description != emptyText {
+        arg.SetDescription = true
+        arg.Description = role.Description
+    }
 
-	response := struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
-		Data    []db.Role `json:"data"`
-	}{
-		Status:  true,
-		Message: "role updated successfully",
-		Data:     []db.Role{roleInfo},
-	}
+	if role.IsDeleted.Valid && role.IsDeleted.Bool {
+        arg.SetIsDeleted = true
+        arg.IsDeleted = role.IsDeleted
+    }
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+    roleInfo, err := server.store.UpdateRole(ctx, arg)
+    if err != nil {
+        errorResponse(w, http.StatusInternalServerError, "Failed to fetch role")
+        return
+    }
+
+    response := struct {
+        Status  bool   `json:"status"`
+        Message string `json:"message"`
+        Data    []db.Role `json:"data"`
+    }{
+        Status:  true,
+        Message: "Role updated successfully",
+        Data:     []db.Role{roleInfo},
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(response)
 }
 
 func (server *Server) handlerDeleteRole(w http.ResponseWriter, r *http.Request) {

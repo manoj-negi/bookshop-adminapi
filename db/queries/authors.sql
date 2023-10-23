@@ -16,9 +16,15 @@ SELECT * FROM authors;
 -- name: UpdateAuthor :one
 UPDATE authors
 SET
-    name = $2,
-    is_deleted = $3
-WHERE id = $1
+    name = CASE 
+    WHEN @set_name::boolean = TRUE THEN @name
+    ELSE name
+    END,
+    is_deleted = CASE
+    WHEN @set_is_deleted::boolean = TRUE THEN @is_deleted
+    ELSE is_deleted
+    END
+WHERE id = @id
 RETURNING *;
 
 -- name: DeleteAuthor :one

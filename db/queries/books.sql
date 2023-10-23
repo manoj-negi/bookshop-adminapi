@@ -4,13 +4,15 @@ INSERT INTO books (
     author_id,
     publication_date,
     price,
-    stock_quantity
+    stock_quantity,
+    is_deleted
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
-    $5
+    $5,
+    $6
 ) RETURNING *;
 
 -- name: GetBook :one
@@ -22,12 +24,31 @@ SELECT * FROM books;
 -- name: UpdateBook :one
 UPDATE books
 SET
-    title = $2,
-    author_id = $3,
-    publication_date = $4,
-    price = $5,
-    stock_quantity = $6
-WHERE id = $1
+    title = CASE
+    WHEN @set_title::boolean = TRUE THEN @title
+    ELSE title
+    END,
+    author_id = CASE
+    WHEN @set_author_id::boolean = TRUE THEN @author_id
+    ELSE author_id
+    END,
+    publication_date = CASE
+    WHEN @set_publication_date::boolean = TRUE THEN @publication_date
+    ELSE publication_date
+    END,
+    price = CASE
+    WHEN @set_price::boolean = TRUE THEN @price
+    ELSE price
+    END,
+    stock_quantity = CASE
+    WHEN @set_stock_quantity::boolean = TRUE THEN @stock_quantity
+    ELSE stock_quantity
+    END,
+    is_deleted = CASE
+    WHEN @set_is_deleted::boolean = TRUE THEN @is_deleted
+    ELSE is_deleted
+    END
+WHERE id = @id
 RETURNING *;
 
 -- name: DeleteBook :one
